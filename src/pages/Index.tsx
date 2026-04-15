@@ -45,10 +45,10 @@ export default function Index() {
     <PortalLayout title="Dashboard" subtitle="Overview of your projects and tasks">
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard title="Active Projects" value="3" subtitle="2 in progress" icon={FolderOpen} variant="primary" />
           <StatCard title="Pending Actions" value="4" subtitle="2 urgent" icon={AlertCircle} variant="warning" />
-          <StatCard title="Messages" value="1" subtitle="Unread" icon={MessageSquare} variant="success" />
+          {/* <StatCard title="Messages" value="1" subtitle="Unread" icon={MessageSquare} variant="success" /> */}
           <StatCard title="Documents" value="12" subtitle="3 awaiting signature" icon={FileText} />
         </div>
 
@@ -101,16 +101,15 @@ export default function Index() {
                   key={action.title}
                   className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer group"
                 >
-                  <div className={`h-8 w-8 rounded-md flex items-center justify-center shrink-0 ${
-                    action.type === "document" ? "bg-primary/10 text-primary" :
+                  <div className={`h-8 w-8 rounded-md flex items-center justify-center shrink-0 ${action.type === "document" ? "bg-primary/10 text-primary" :
                     action.type === "signature" ? "bg-secondary/10 text-secondary" :
-                    action.type === "form" ? "bg-info/10 text-info" :
-                    "bg-warning/10 text-warning"
-                  }`}>
+                      action.type === "form" ? "bg-info/10 text-info" :
+                        "bg-warning/10 text-warning"
+                    }`}>
                     {action.type === "document" ? <Upload className="h-4 w-4" /> :
-                     action.type === "signature" ? <FileText className="h-4 w-4" /> :
-                     action.type === "form" ? <CheckCircle2 className="h-4 w-4" /> :
-                     <AlertCircle className="h-4 w-4" />}
+                      action.type === "signature" ? <FileText className="h-4 w-4" /> :
+                        action.type === "form" ? <CheckCircle2 className="h-4 w-4" /> :
+                          <AlertCircle className="h-4 w-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{action.title}</p>
@@ -126,7 +125,7 @@ export default function Index() {
         </div>
 
         {/* Recent Messages */}
-        <Card className="animate-fade-in">
+        {/* <Card className="animate-fade-in">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-heading">Recent Messages</CardTitle>
@@ -154,7 +153,7 @@ export default function Index() {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </PortalLayout>
   );

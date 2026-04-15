@@ -28,13 +28,13 @@ const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Documents", url: "/documents", icon: FileText },
   { title: "Payments", url: "/payments", icon: CreditCard },
-  { title: "Messages", url: "/messages", icon: MessageSquare },
+  // { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Onboarding", url: "/onboarding", icon: CheckSquare },
   { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 const bottomItems = [
-  { title: "Settings", url: "/settings", icon: Settings },
+  // { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function PortalSidebar() {

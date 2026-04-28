@@ -8,7 +8,7 @@ import Index from "./pages/Index.tsx";
 import Documents from "./pages/Documents.tsx";
 import Payments from "./pages/Payments.tsx";
 import Messages from "./pages/Messages.tsx";
-import Onboarding from "./pages/Onboarding.tsx";
+import KycOnboarding from "./pages/KycOnboarding.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -26,7 +26,7 @@ const App = () => (
           <Route path="/documents" element={<Documents />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/messages" element={<Messages />} />
-          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

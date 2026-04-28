@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { getProfile, setProfile } from "@/lib/profile";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,8 +19,9 @@ export default function Login() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+      const profile = setProfile({ email: email || getProfile().email });
+      navigate(profile.isOnboarded ? "/dashboard" : "/onboarding");
+    }, 600);
   };
 
   return (

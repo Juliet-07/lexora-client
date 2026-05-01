@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
+import { setProfile, type ClientClassification } from "@/lib/profile";
 
 export default function Login() {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;

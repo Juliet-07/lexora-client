@@ -36,10 +36,20 @@ export default function Login() {
     const url = `${apiURL}/auth/login`;
     try {
       const response = await axios.post(url, loginDetails);
-      console.log(response.data.data, "response");
-      let accessToken = response.data.data.tokens.accessToken;
+      const payload = response.data.data;
+      const accessToken = payload.tokens.accessToken;
       localStorage.setItem("userToken", accessToken);
-      let kycStatus = response.data.data.kycContext.kycStatus;
+
+      const kycStatus: string = payload.kycContext?.kycStatus ?? "not_started";
+      const classification: ClientClassification | null =
+        payload.user?.clientProfile?.classifications ?? null;
+
+      setProfile({
+        classifications: classification,
+        kycStatus,
+        isOnboarded: kycStatus === "approved" || kycStatus === "completed",
+      });
+
       setTimeout(() => {
         setIsLoading(false);
         navigate(kycStatus === "not_started" ? "/onboarding" : "/dashboard");

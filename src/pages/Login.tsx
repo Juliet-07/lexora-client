@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
+import { setProfile, type ClientClassification } from "@/lib/profile";
 
 export default function Login() {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
@@ -35,10 +36,20 @@ export default function Login() {
     const url = `${apiURL}/auth/login`;
     try {
       const response = await axios.post(url, loginDetails);
-      console.log(response.data.data, "response");
-      let accessToken = response.data.data.tokens.accessToken;
+      const payload = response.data.data;
+      const accessToken = payload.tokens.accessToken;
       localStorage.setItem("userToken", accessToken);
-      let kycStatus = response.data.data.kycContext.kycStatus;
+
+      const kycStatus: string = payload.kycContext?.kycStatus ?? "not_started";
+      const classification: ClientClassification | null =
+        payload.user?.clientProfile?.classifications ?? null;
+
+      setProfile({
+        classifications: classification,
+        kycStatus,
+        isOnboarded: kycStatus === "approved" || kycStatus === "completed",
+      });
+
       setTimeout(() => {
         setIsLoading(false);
         navigate(kycStatus === "not_started" ? "/onboarding" : "/dashboard");

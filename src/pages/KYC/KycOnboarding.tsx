@@ -42,7 +42,55 @@ import {
   Handshake,
   Landmark,
 } from "lucide-react";
-import { KycData, initialData } from "./data";
+import {
+  KycData,
+  initialData,
+  emptyBeneficialOwner,
+  emptyDirector,
+  emptyRelatedEntity,
+  type BeneficialOwner,
+  type DirectorOfficer,
+  type RelatedEntity,
+} from "./data";
+
+const ENTITY_TYPES = [
+  "Private Limited Company",
+  "Public Limited Company",
+  "Partnership",
+  "Trust",
+  "Foundation",
+  "Other",
+];
+
+const ANNUAL_REVENUE_RANGES = [
+  "Less than $100,000",
+  "$100,000 - $500,000",
+  "$500,000 - $5,000,000",
+  "Over $5,000,000",
+];
+
+const EMPLOYEE_RANGES = ["1-10", "11-50", "51-200", "Over 200"];
+
+const NATURE_OF_CONTROL = [
+  "Direct Shareholding",
+  "Indirect Shareholding",
+  "Voting Rights",
+  "Other Control Mechanisms",
+];
+
+const PEP_STATUS = [
+  "Not a PEP",
+  "This person is a Politically Exposed Person (PEP)",
+  "Has close association with a PEP",
+];
+
+const RELATIONSHIP_TYPES = [
+  "Subsidiary",
+  "Affiliate",
+  "Parent Company",
+  "Joint Venture",
+  "Other",
+];
 
 const transactionPatterns = [
   "Domestic transfers",

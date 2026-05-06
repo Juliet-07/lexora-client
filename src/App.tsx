@@ -8,7 +8,7 @@ import Index from "./pages/Index.tsx";
 import Documents from "./pages/Documents.tsx";
 import Payments from "./pages/Payments.tsx";
 import Messages from "./pages/Messages.tsx";
-import KycOnboarding from "./pages/KycOnboarding.tsx";
+import KycOnboarding from "./pages/KYC/KycOnboarding.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import NotFound from "./pages/NotFound.tsx";
 

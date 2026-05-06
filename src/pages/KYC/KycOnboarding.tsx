@@ -34,115 +34,47 @@ import {
   Handshake,
   Landmark,
 } from "lucide-react";
+import { KycData, initialData } from "./data";
 
-interface KycData {
-  // Individual
-  fullName: string;
-  dob: string;
-  placeOfBirth: string;
-  nationality: string;
-  taxResidency: string;
-  taxId: string;
-  occupation: string;
-  employer: string;
-  sourceOfWealth: string;
-  netWorth: string;
-  annualIncome: string;
-  // Address
-  street: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  // Contact
-  primaryPhone: string;
-  secondaryPhone: string;
-  email: string;
-  // ID
-  idNumber: string;
-  idIssueDate: string;
-  idExpiryDate: string;
-  idIssuingCountry: string;
-  // Corporate
-  legalEntityName: string;
-  tradingName: string;
-  registrationNumber: string;
-  incorporationCountry: string;
-  incorporationDate: string;
-  businessType: string;
-  website: string;
-  // Partnership
-  partnershipName: string;
-  partnershipType: string;
-  partnershipRegNumber: string;
-  partnershipJurisdiction: string;
-  partnershipFormationDate: string;
-  partnershipBusinessActivity: string;
-  partners: string;
-  // Trust
-  trustName: string;
-  trustType: string;
-  trustDeedDate: string;
-  trustJurisdiction: string;
-  settlor: string;
-  trustees: string;
-  beneficiaries: string;
-  protector: string;
-  trustPurpose: string;
-  // Beneficial ownership / Directors (corporate)
-  beneficialOwners: string;
-  directors: string;
-  // AML
-  purpose: string;
-  sourceOfFunds: string[];
-  expectedVolume: string;
-  expectedValue: string;
-  expectedCountries: string;
-  highRiskIndicators: string[];
-  isPep: "yes" | "no" | "";
-  // Declaration
-  signature: string;
-  signatureDate: string;
-  agreeTrue: boolean;
-  agreeUpdate: boolean;
-  agreeConsent: boolean;
-}
-
-const initialData: KycData = {
-  fullName: "", dob: "", placeOfBirth: "", nationality: "", taxResidency: "", taxId: "",
-  occupation: "", employer: "", sourceOfWealth: "", netWorth: "", annualIncome: "",
-  street: "", city: "", state: "", postalCode: "", country: "",
-  primaryPhone: "", secondaryPhone: "", email: "",
-  idNumber: "", idIssueDate: "", idExpiryDate: "", idIssuingCountry: "",
-  legalEntityName: "", tradingName: "", registrationNumber: "", incorporationCountry: "",
-  incorporationDate: "", businessType: "", website: "",
-  partnershipName: "", partnershipType: "", partnershipRegNumber: "", partnershipJurisdiction: "",
-  partnershipFormationDate: "", partnershipBusinessActivity: "", partners: "",
-  trustName: "", trustType: "", trustDeedDate: "", trustJurisdiction: "",
-  settlor: "", trustees: "", beneficiaries: "", protector: "", trustPurpose: "",
-  beneficialOwners: "", directors: "",
-  purpose: "", sourceOfFunds: [], expectedVolume: "", expectedValue: "", expectedCountries: "",
-  highRiskIndicators: [], isPep: "",
-  signature: "", signatureDate: "", agreeTrue: false, agreeUpdate: false, agreeConsent: false,
-};
+const transactionPatterns = [
+  "Domestic transfers",
+  "International transfers",
+  "Large transactions (>$10,000)",
+  "Cryptocurrency-related transactions",
+  "Cash-intensive business",
+  "Other",
+];
 
 const sourceOfFundsOptions = [
-  "Business Revenue", "Investment Income", "Loans/Financing", "Shareholder Capital",
-  "Salary/Employment", "Inheritance", "Other",
+  "Business Revenue",
+  "Investment Income",
+  "Loans/Financing",
+  "Shareholder Capital",
+  // "Salary/Employment",
+  // "Inheritance",
+  "Other",
 ];
 
 const highRiskOptions = [
+  "High-value goods dealer (art, jewelry,luxury goods)",
   "Money Service Business or Payment Processor",
   "Cryptocurrency or Virtual Asset Service Provider",
   "Gambling or Gaming Business",
   "Mining or Commodities Trading Business",
   "Primarily cash-based business",
+  "Significant offshore operations or complex structure",
+  "Business owned or controlled by a Politically Exposed Person",
   "None of the above",
 ];
 
 const classificationMeta: Record<
   ClientClassification,
-  { label: string; icon: typeof User; sectionTitle: string; addressTitle: string }
+  {
+    label: string;
+    icon: typeof User;
+    sectionTitle: string;
+    addressTitle: string;
+  }
 > = {
   individual: {
     label: "Individual",
@@ -174,7 +106,8 @@ export default function KycOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [data, setData] = useState<KycData>(initialData);
-  const [classification, setClassification] = useState<ClientClassification | null>(null);
+  const [classification, setClassification] =
+    useState<ClientClassification | null>(null);
   const [step, setStep] = useState(1);
 
   // Read classification from profile (set at login)
@@ -199,12 +132,17 @@ export default function KycOnboarding() {
     setData((d) => ({ ...d, [key]: value }));
   };
 
-  const toggleArray = (key: "sourceOfFunds" | "highRiskIndicators", value: string) => {
+  const toggleArray = (
+    key: "sourceOfFunds" | "highRiskIndicators",
+    value: string,
+  ) => {
     setData((d) => {
       const arr = d[key];
       return {
         ...d,
-        [key]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value],
+        [key]: arr.includes(value)
+          ? arr.filter((v) => v !== value)
+          : [...arr, value],
       };
     });
   };
@@ -212,11 +150,21 @@ export default function KycOnboarding() {
   // Conditional steps depending on classification
   const steps = useMemo(() => {
     const base = [
-      { id: "details", title: classification ? classificationMeta[classification].sectionTitle : "Details", icon: FileText },
+      {
+        id: "details",
+        title: classification
+          ? classificationMeta[classification].sectionTitle
+          : "Details",
+        icon: FileText,
+      },
       { id: "address", title: "Address & Contact", icon: Building2 },
       { id: "identification", title: "Identification", icon: Upload },
     ];
-    if (classification === "corporate" || classification === "partnership" || classification === "trust") {
+    if (
+      classification === "corporate" ||
+      classification === "partnership" ||
+      classification === "trust"
+    ) {
       base.push({ id: "ownership", title: "Ownership & Control", icon: Users });
     }
     base.push({ id: "aml", title: "AML Risk", icon: AlertTriangle });
@@ -243,7 +191,12 @@ export default function KycOnboarding() {
   };
 
   const handleSubmit = () => {
-    if (!data.agreeTrue || !data.agreeUpdate || !data.agreeConsent || !data.signature) {
+    if (
+      !data.agreeTrue ||
+      !data.agreeUpdate ||
+      !data.agreeConsent ||
+      !data.signature
+    ) {
       toast({
         title: "Missing acknowledgements",
         description: "Please complete all declarations to submit.",
@@ -263,7 +216,10 @@ export default function KycOnboarding() {
   // If classification is missing (e.g. direct visit without login), gently guide back
   if (!classification) {
     return (
-      <PortalLayout title="Client Onboarding" subtitle="KYC / AML Compliance Form">
+      <PortalLayout
+        title="Client Onboarding"
+        subtitle="KYC / AML Compliance Form"
+      >
         <div className="max-w-xl mx-auto">
           <Card>
             <CardContent className="p-8 text-center space-y-4">
@@ -272,9 +228,13 @@ export default function KycOnboarding() {
                 We can't determine your client type
               </h2>
               <p className="text-sm text-muted-foreground">
-                Please sign in again so we can load the correct onboarding form for you.
+                Please sign in again so we can load the correct onboarding form
+                for you.
               </p>
-              <Button className="gradient-primary text-primary-foreground" onClick={() => navigate("/")}>
+              <Button
+                className="gradient-primary text-primary-foreground"
+                onClick={() => navigate("/")}
+              >
                 Back to Sign In
               </Button>
             </CardContent>
@@ -289,21 +249,30 @@ export default function KycOnboarding() {
   const currentStepId = steps[step - 1].id;
 
   return (
-    <PortalLayout title="Client Onboarding" subtitle="KYC / AML Compliance Form">
+    <PortalLayout
+      title="Client Onboarding"
+      subtitle="KYC / AML Compliance Form"
+    >
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header card */}
         <Card className="border-0 shadow-md overflow-hidden">
           <div className="gradient-primary p-6 text-primary-foreground">
             <div className="flex items-center gap-3 mb-2">
               <ShieldCheck className="h-6 w-6" />
-              <h2 className="text-xl font-heading font-bold">KYC / AML Onboarding</h2>
-              <Badge variant="secondary" className="ml-2 bg-white/15 text-primary-foreground border-0 gap-1">
+              <h2 className="text-xl font-heading font-bold">
+                KYC / AML Onboarding
+              </h2>
+              <Badge
+                variant="secondary"
+                className="ml-2 bg-white/15 text-primary-foreground border-0 gap-1"
+              >
                 <ClassIcon className="h-3 w-3" /> {meta.label}
               </Badge>
             </div>
             <p className="text-sm opacity-90 max-w-2xl">
-              Welcome! We've tailored this form for {meta.label.toLowerCase()} clients.
-              You can save your progress and return at any time. Estimated time: 15–20 minutes.
+              Welcome! We've tailored this form for {meta.label.toLowerCase()}{" "}
+              clients. You can save your progress and return at any time.
+              Estimated time: 15–20 minutes.
             </p>
           </div>
           <CardContent className="p-6">
@@ -311,7 +280,9 @@ export default function KycOnboarding() {
               <p className="text-sm font-medium">
                 Step {step} of {steps.length} · {steps[step - 1].title}
               </p>
-              <span className="text-sm font-heading font-bold text-primary">{progress}%</span>
+              <span className="text-sm font-heading font-bold text-primary">
+                {progress}%
+              </span>
             </div>
             <Progress value={progress} className="h-2 mb-5" />
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -328,16 +299,20 @@ export default function KycOnboarding() {
                       current
                         ? "border-primary bg-primary/5"
                         : done
-                        ? "border-success/30 bg-success/5"
-                        : "border-border hover:border-primary/40"
+                          ? "border-success/30 bg-success/5"
+                          : "border-border hover:border-primary/40"
                     }`}
                   >
                     {done ? (
                       <CheckCircle2 className="h-4 w-4 text-success" />
                     ) : (
-                      <Icon className={`h-4 w-4 ${current ? "text-primary" : "text-muted-foreground"}`} />
+                      <Icon
+                        className={`h-4 w-4 ${current ? "text-primary" : "text-muted-foreground"}`}
+                      />
                     )}
-                    <span className="text-[10px] font-medium leading-tight">{s.title}</span>
+                    <span className="text-[10px] font-medium leading-tight">
+                      {s.title}
+                    </span>
                   </button>
                 );
               })}
@@ -348,35 +323,78 @@ export default function KycOnboarding() {
         {/* Form body */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-heading">{steps[step - 1].title}</CardTitle>
+            <CardTitle className="text-base font-heading">
+              {steps[step - 1].title}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {currentStepId === "details" && (
-              <DetailsStep classification={classification} data={data} update={update} />
+              <DetailsStep
+                classification={classification}
+                data={data}
+                update={update}
+              />
             )}
 
             {currentStepId === "address" && (
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-sm font-semibold mb-3">{meta.addressTitle}</h3>
+                  <h3 className="text-sm font-semibold mb-3">
+                    {meta.addressTitle}
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
-                      <Field label="Street Address *" value={data.street} onChange={(v) => update("street", v)} />
+                      <Field
+                        label="Street Address *"
+                        value={data.street}
+                        onChange={(v) => update("street", v)}
+                      />
                     </div>
-                    <Field label="City / Town *" value={data.city} onChange={(v) => update("city", v)} />
-                    <Field label="State / Province" value={data.state} onChange={(v) => update("state", v)} />
-                    <Field label="Postal Code *" value={data.postalCode} onChange={(v) => update("postalCode", v)} />
-                    <Field label="Country *" value={data.country} onChange={(v) => update("country", v)} />
+                    <Field
+                      label="City / Town *"
+                      value={data.city}
+                      onChange={(v) => update("city", v)}
+                    />
+                    <Field
+                      label="State / Province"
+                      value={data.state}
+                      onChange={(v) => update("state", v)}
+                    />
+                    <Field
+                      label="Postal Code *"
+                      value={data.postalCode}
+                      onChange={(v) => update("postalCode", v)}
+                    />
+                    <Field
+                      label="Country *"
+                      value={data.country}
+                      onChange={(v) => update("country", v)}
+                    />
                   </div>
                 </div>
                 <Separator />
                 <div>
-                  <h3 className="text-sm font-semibold mb-3">Contact Information</h3>
+                  <h3 className="text-sm font-semibold mb-3">
+                    Contact Information
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Primary Phone *" value={data.primaryPhone} onChange={(v) => update("primaryPhone", v)} />
-                    <Field label="Secondary Phone" value={data.secondaryPhone} onChange={(v) => update("secondaryPhone", v)} />
+                    <Field
+                      label="Primary Phone *"
+                      value={data.primaryPhone}
+                      onChange={(v) => update("primaryPhone", v)}
+                    />
+                    <Field
+                      label="Secondary Phone"
+                      value={data.secondaryPhone}
+                      onChange={(v) => update("secondaryPhone", v)}
+                    />
                     <div className="sm:col-span-2">
-                      <Field label="Email Address *" type="email" value={data.email} onChange={(v) => update("email", v)} />
+                      <Field
+                        label="Email Address *"
+                        type="email"
+                        value={data.email}
+                        onChange={(v) => update("email", v)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -384,11 +402,19 @@ export default function KycOnboarding() {
             )}
 
             {currentStepId === "identification" && (
-              <IdentificationStep classification={classification} data={data} update={update} />
+              <IdentificationStep
+                classification={classification}
+                data={data}
+                update={update}
+              />
             )}
 
             {currentStepId === "ownership" && (
-              <OwnershipStep classification={classification} data={data} update={update} />
+              <OwnershipStep
+                classification={classification}
+                data={data}
+                update={update}
+              />
             )}
 
             {currentStepId === "aml" && (
@@ -404,13 +430,41 @@ export default function KycOnboarding() {
                   />
                 </div>
                 <div>
-                  <Label className="mb-2 block">Primary Source of Funds *</Label>
+                  <Label className="mb-2 block">
+                    Expected Transaction Patterns *
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {transactionPatterns.map((opt) => (
+                      <Label
+                        key={opt}
+                        className="flex items-center gap-2 border rounded-md p-2.5 cursor-pointer hover:border-primary/40"
+                      >
+                        <Checkbox
+                          checked={data.transactionData.includes(opt)}
+                          onCheckedChange={() =>
+                            toggleArray("sourceOfFunds", opt)
+                          }
+                        />
+                        <span className="text-sm">{opt}</span>
+                      </Label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <Label className="mb-2 block">
+                    Primary Source of Funds *
+                  </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {sourceOfFundsOptions.map((opt) => (
-                      <Label key={opt} className="flex items-center gap-2 border rounded-md p-2.5 cursor-pointer hover:border-primary/40">
+                      <Label
+                        key={opt}
+                        className="flex items-center gap-2 border rounded-md p-2.5 cursor-pointer hover:border-primary/40"
+                      >
                         <Checkbox
                           checked={data.sourceOfFunds.includes(opt)}
-                          onCheckedChange={() => toggleArray("sourceOfFunds", opt)}
+                          onCheckedChange={() =>
+                            toggleArray("sourceOfFunds", opt)
+                          }
                         />
                         <span className="text-sm">{opt}</span>
                       </Label>
@@ -418,27 +472,51 @@ export default function KycOnboarding() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Expected # of Monthly Transactions" value={data.expectedVolume} onChange={(v) => update("expectedVolume", v)} />
-                  <Field label="Expected Total Monthly Value" value={data.expectedValue} onChange={(v) => update("expectedValue", v)} />
+                  <Field
+                    label="Expected Number of Transactions Monthly"
+                    value={data.expectedVolume}
+                    onChange={(v) => update("expectedVolume", v)}
+                  />
+                  <Field
+                    label="Expected Total Value Monthly"
+                    value={data.expectedValue}
+                    onChange={(v) => update("expectedValue", v)}
+                  />
                   <div className="sm:col-span-2">
-                    <Field label="Expected Countries of Transaction" value={data.expectedCountries} onChange={(v) => update("expectedCountries", v)} placeholder="e.g. UK, US, UAE" />
+                    <Field
+                      label="Expected Countries of Transaction"
+                      value={data.expectedCountries}
+                      onChange={(v) => update("expectedCountries", v)}
+                      placeholder="e.g. UK, US, UAE"
+                    />
                   </div>
                 </div>
                 <div>
-                  <Label className="mb-2 block">High-Risk Indicators</Label>
+                  <Label className="mb-2 block">
+                    High-Risk Indicators{" "}
+                    <span className="italic text-red-300 text-xs mx-2">
+                      Please indicate if any of the following apply to your
+                      business
+                    </span>
+                  </Label>
                   <div className="space-y-2">
                     {highRiskOptions.map((opt) => (
-                      <Label key={opt} className="flex items-center gap-2 border rounded-md p-2.5 cursor-pointer hover:border-primary/40">
+                      <Label
+                        key={opt}
+                        className="flex items-center gap-2 border rounded-md p-2.5 cursor-pointer hover:border-primary/40"
+                      >
                         <Checkbox
                           checked={data.highRiskIndicators.includes(opt)}
-                          onCheckedChange={() => toggleArray("highRiskIndicators", opt)}
+                          onCheckedChange={() =>
+                            toggleArray("highRiskIndicators", opt)
+                          }
                         />
                         <span className="text-sm">{opt}</span>
                       </Label>
                     ))}
                   </div>
                 </div>
-                <div>
+                {/* <div>
                   <Label className="mb-2 block">
                     {classification === "individual"
                       ? "Are you a Politically Exposed Person (PEP)? *"
@@ -456,7 +534,7 @@ export default function KycOnboarding() {
                       <RadioGroupItem value="no" /> No
                     </Label>
                   </RadioGroup>
-                </div>
+                </div> */}
               </div>
             )}
 
@@ -466,29 +544,78 @@ export default function KycOnboarding() {
                   <p className="font-semibold">Declaration</p>
                   <p>I/We hereby declare that:</p>
                   <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                    <li>All information provided is true, accurate, and complete to the best of my/our knowledge.</li>
-                    <li>I/We understand that providing false or misleading information is a serious offense.</li>
-                    <li>I/We will promptly notify you of any material changes to this information.</li>
-                    <li>I/We consent to the processing of personal data for compliance purposes.</li>
+                    <li>
+                      All information provided is true, accurate, and complete
+                      to the best of my/our knowledge.
+                    </li>
+                    <li>
+                      I/We understand that providing false or misleading
+                      information is a serious offense and may result in legal
+                      consequences.
+                    </li>
+                    <li>
+                      I/We will notify the institution immediately of any
+                      material changes to the information provided.
+                    </li>
+                    <li>
+                      I/We authorize the institution to verify the information
+                      provided through appropriate channels.
+                    </li>
                   </ul>
                 </div>
                 <div className="space-y-3">
                   <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox checked={data.agreeTrue} onCheckedChange={(v) => update("agreeTrue", !!v)} className="mt-0.5" />
-                    <span className="text-sm">I confirm all information provided is true and accurate.</span>
+                    <Checkbox
+                      checked={data.agreeTrue}
+                      onCheckedChange={(v) => update("agreeTrue", !!v)}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm">
+                      I/We consent to the collection, processing, and storage of
+                      personal data for compliance and regulatory purposes.
+                    </span>
                   </Label>
                   <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox checked={data.agreeUpdate} onCheckedChange={(v) => update("agreeUpdate", !!v)} className="mt-0.5" />
-                    <span className="text-sm">I agree to update you of any material changes within 30 days.</span>
+                    <Checkbox
+                      checked={data.agreeUpdate}
+                      onCheckedChange={(v) => update("agreeUpdate", !!v)}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm">
+                      I/We consent to verification checks against sanctions
+                      lists, PEP databases, and other compliance databases.
+                    </span>
                   </Label>
                   <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox checked={data.agreeConsent} onCheckedChange={(v) => update("agreeConsent", !!v)} className="mt-0.5" />
-                    <span className="text-sm">I consent to the processing of my personal data for KYC/AML compliance purposes.</span>
+                    <Checkbox
+                      checked={data.agreeConsent}
+                      onCheckedChange={(v) => update("agreeConsent", !!v)}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm">
+                      I/We understand that ongoing transaction monitoring will
+                      be conducted as part of regulatory requirements.
+                    </span>
                   </Label>
                 </div>
+                <p>
+                  I/We acknowledge that I/we have been informed of my/our rights
+                  regarding the processing of personal data, including the right
+                  to access, correct, and request deletion of data in accordance
+                  with applicable data protection laws.
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Signature (type full name) *" value={data.signature} onChange={(v) => update("signature", v)} />
-                  <Field label="Date *" type="date" value={data.signatureDate} onChange={(v) => update("signatureDate", v)} />
+                  <Field
+                    label="Signature (type full name) *"
+                    value={data.signature}
+                    onChange={(v) => update("signature", v)}
+                  />
+                  <Field
+                    label="Date *"
+                    type="date"
+                    value={data.signatureDate}
+                    onChange={(v) => update("signatureDate", v)}
+                  />
                 </div>
               </div>
             )}
@@ -497,7 +624,11 @@ export default function KycOnboarding() {
 
         {/* Footer actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky bottom-0 bg-background/80 backdrop-blur py-3">
-          <Button variant="ghost" onClick={() => setStep((s) => Math.max(1, s - 1))} disabled={step === 1}>
+          <Button
+            variant="ghost"
+            onClick={() => setStep((s) => Math.max(1, s - 1))}
+            disabled={step === 1}
+          >
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           <div className="flex items-center gap-2">
@@ -512,7 +643,10 @@ export default function KycOnboarding() {
                 Save & Continue <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             ) : (
-              <Button className="gradient-primary text-primary-foreground" onClick={handleSubmit}>
+              <Button
+                className="gradient-primary text-primary-foreground"
+                onClick={handleSubmit}
+              >
                 Submit Onboarding
               </Button>
             )}
@@ -535,17 +669,64 @@ function DetailsStep({ classification, data, update }: StepProps) {
   if (classification === "individual") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Full Legal Name *" value={data.fullName} onChange={(v) => update("fullName", v)} />
-        <Field label="Date of Birth *" type="date" value={data.dob} onChange={(v) => update("dob", v)} />
-        <Field label="Place of Birth" value={data.placeOfBirth} onChange={(v) => update("placeOfBirth", v)} />
-        <Field label="Nationality *" value={data.nationality} onChange={(v) => update("nationality", v)} />
-        <Field label="Tax Residency Country *" value={data.taxResidency} onChange={(v) => update("taxResidency", v)} />
-        <Field label="Tax ID / TIN *" value={data.taxId} onChange={(v) => update("taxId", v)} />
-        <Field label="Occupation" value={data.occupation} onChange={(v) => update("occupation", v)} />
-        <Field label="Employer" value={data.employer} onChange={(v) => update("employer", v)} />
-        <Field label="Source of Wealth" value={data.sourceOfWealth} onChange={(v) => update("sourceOfWealth", v)} />
-        <Field label="Estimated Net Worth" value={data.netWorth} onChange={(v) => update("netWorth", v)} placeholder="e.g. $50,000 - $250,000" />
-        <Field label="Annual Income Range" value={data.annualIncome} onChange={(v) => update("annualIncome", v)} placeholder="e.g. $25,000 - $75,000" />
+        <Field
+          label="Full Legal Name *"
+          value={data.fullName}
+          onChange={(v) => update("fullName", v)}
+        />
+        <Field
+          label="Date of Birth *"
+          type="date"
+          value={data.dob}
+          onChange={(v) => update("dob", v)}
+        />
+        <Field
+          label="Place of Birth"
+          value={data.placeOfBirth}
+          onChange={(v) => update("placeOfBirth", v)}
+        />
+        <Field
+          label="Nationality *"
+          value={data.nationality}
+          onChange={(v) => update("nationality", v)}
+        />
+        <Field
+          label="Tax Residency Country *"
+          value={data.taxResidency}
+          onChange={(v) => update("taxResidency", v)}
+        />
+        <Field
+          label="Tax ID / TIN *"
+          value={data.taxId}
+          onChange={(v) => update("taxId", v)}
+        />
+        <Field
+          label="Occupation"
+          value={data.occupation}
+          onChange={(v) => update("occupation", v)}
+        />
+        <Field
+          label="Employer"
+          value={data.employer}
+          onChange={(v) => update("employer", v)}
+        />
+        <Field
+          label="Source of Wealth"
+          value={data.sourceOfWealth}
+          onChange={(v) => update("sourceOfWealth", v)}
+        />
+        <Field
+          label="Estimated Net Worth"
+          value={data.netWorth}
+          onChange={(v) => update("netWorth", v)}
+          placeholder="e.g. $50,000 - $250,000"
+        />
+        <Field
+          label="Annual Income Range"
+          value={data.annualIncome}
+          onChange={(v) => update("annualIncome", v)}
+          placeholder="e.g. $25,000 - $75,000"
+        />
       </div>
     );
   }
@@ -553,14 +734,48 @@ function DetailsStep({ classification, data, update }: StepProps) {
   if (classification === "corporate") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Legal Entity Name *" value={data.legalEntityName} onChange={(v) => update("legalEntityName", v)} />
-        <Field label="Trading / Commercial Name" value={data.tradingName} onChange={(v) => update("tradingName", v)} />
-        <Field label="Registration Number *" value={data.registrationNumber} onChange={(v) => update("registrationNumber", v)} />
-        <Field label="Country of Incorporation *" value={data.incorporationCountry} onChange={(v) => update("incorporationCountry", v)} />
-        <Field label="Date of Incorporation *" type="date" value={data.incorporationDate} onChange={(v) => update("incorporationDate", v)} />
-        <Field label="Business Type / Industry *" value={data.businessType} onChange={(v) => update("businessType", v)} />
-        <Field label="Tax ID *" value={data.taxId} onChange={(v) => update("taxId", v)} />
-        <Field label="Company Website" value={data.website} onChange={(v) => update("website", v)} placeholder="https://" />
+        <Field
+          label="Legal Entity Name *"
+          value={data.legalEntityName}
+          onChange={(v) => update("legalEntityName", v)}
+        />
+        <Field
+          label="Trading / Commercial Name"
+          value={data.tradingName}
+          onChange={(v) => update("tradingName", v)}
+        />
+        <Field
+          label="Registration Number *"
+          value={data.registrationNumber}
+          onChange={(v) => update("registrationNumber", v)}
+        />
+        <Field
+          label="Country of Incorporation *"
+          value={data.incorporationCountry}
+          onChange={(v) => update("incorporationCountry", v)}
+        />
+        <Field
+          label="Date of Incorporation *"
+          type="date"
+          value={data.incorporationDate}
+          onChange={(v) => update("incorporationDate", v)}
+        />
+        <Field
+          label="Business Type / Industry *"
+          value={data.businessType}
+          onChange={(v) => update("businessType", v)}
+        />
+        <Field
+          label="Tax ID *"
+          value={data.taxId}
+          onChange={(v) => update("taxId", v)}
+        />
+        <Field
+          label="Company Website"
+          value={data.website}
+          onChange={(v) => update("website", v)}
+          placeholder="https://"
+        />
       </div>
     );
   }
@@ -568,14 +783,44 @@ function DetailsStep({ classification, data, update }: StepProps) {
   if (classification === "partnership") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Partnership Name *" value={data.partnershipName} onChange={(v) => update("partnershipName", v)} />
-        <Field label="Partnership Type *" value={data.partnershipType} onChange={(v) => update("partnershipType", v)} placeholder="General, Limited, LLP" />
-        <Field label="Registration Number" value={data.partnershipRegNumber} onChange={(v) => update("partnershipRegNumber", v)} />
-        <Field label="Jurisdiction *" value={data.partnershipJurisdiction} onChange={(v) => update("partnershipJurisdiction", v)} />
-        <Field label="Date of Formation *" type="date" value={data.partnershipFormationDate} onChange={(v) => update("partnershipFormationDate", v)} />
-        <Field label="Tax ID *" value={data.taxId} onChange={(v) => update("taxId", v)} />
+        <Field
+          label="Partnership Name *"
+          value={data.partnershipName}
+          onChange={(v) => update("partnershipName", v)}
+        />
+        <Field
+          label="Partnership Type *"
+          value={data.partnershipType}
+          onChange={(v) => update("partnershipType", v)}
+          placeholder="General, Limited, LLP"
+        />
+        <Field
+          label="Registration Number"
+          value={data.partnershipRegNumber}
+          onChange={(v) => update("partnershipRegNumber", v)}
+        />
+        <Field
+          label="Jurisdiction *"
+          value={data.partnershipJurisdiction}
+          onChange={(v) => update("partnershipJurisdiction", v)}
+        />
+        <Field
+          label="Date of Formation *"
+          type="date"
+          value={data.partnershipFormationDate}
+          onChange={(v) => update("partnershipFormationDate", v)}
+        />
+        <Field
+          label="Tax ID *"
+          value={data.taxId}
+          onChange={(v) => update("taxId", v)}
+        />
         <div className="sm:col-span-2">
-          <Field label="Principal Business Activity *" value={data.partnershipBusinessActivity} onChange={(v) => update("partnershipBusinessActivity", v)} />
+          <Field
+            label="Principal Business Activity *"
+            value={data.partnershipBusinessActivity}
+            onChange={(v) => update("partnershipBusinessActivity", v)}
+          />
         </div>
       </div>
     );
@@ -584,11 +829,33 @@ function DetailsStep({ classification, data, update }: StepProps) {
   // Trust
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <Field label="Name of Trust *" value={data.trustName} onChange={(v) => update("trustName", v)} />
-      <Field label="Type of Trust *" value={data.trustType} onChange={(v) => update("trustType", v)} placeholder="Discretionary, Fixed, Charitable…" />
-      <Field label="Date of Trust Deed *" type="date" value={data.trustDeedDate} onChange={(v) => update("trustDeedDate", v)} />
-      <Field label="Governing Jurisdiction *" value={data.trustJurisdiction} onChange={(v) => update("trustJurisdiction", v)} />
-      <Field label="Tax ID *" value={data.taxId} onChange={(v) => update("taxId", v)} />
+      <Field
+        label="Name of Trust *"
+        value={data.trustName}
+        onChange={(v) => update("trustName", v)}
+      />
+      <Field
+        label="Type of Trust *"
+        value={data.trustType}
+        onChange={(v) => update("trustType", v)}
+        placeholder="Discretionary, Fixed, Charitable…"
+      />
+      <Field
+        label="Date of Trust Deed *"
+        type="date"
+        value={data.trustDeedDate}
+        onChange={(v) => update("trustDeedDate", v)}
+      />
+      <Field
+        label="Governing Jurisdiction *"
+        value={data.trustJurisdiction}
+        onChange={(v) => update("trustJurisdiction", v)}
+      />
+      <Field
+        label="Tax ID *"
+        value={data.taxId}
+        onChange={(v) => update("taxId", v)}
+      />
       <div className="sm:col-span-2">
         <Label className="text-xs">Purpose of Trust *</Label>
         <Textarea
@@ -607,21 +874,43 @@ function IdentificationStep({ classification, data, update }: StepProps) {
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field
-          label={classification === "individual" ? "Passport / National ID Number *" : "Authorized Representative ID Number *"}
+          label={
+            classification === "individual"
+              ? "Passport / National ID Number *"
+              : "Authorized Representative ID Number *"
+          }
           value={data.idNumber}
           onChange={(v) => update("idNumber", v)}
         />
-        <Field label="Issuing Country *" value={data.idIssuingCountry} onChange={(v) => update("idIssuingCountry", v)} />
-        <Field label="Issue Date *" type="date" value={data.idIssueDate} onChange={(v) => update("idIssueDate", v)} />
-        <Field label="Expiry Date *" type="date" value={data.idExpiryDate} onChange={(v) => update("idExpiryDate", v)} />
+        <Field
+          label="Issuing Country *"
+          value={data.idIssuingCountry}
+          onChange={(v) => update("idIssuingCountry", v)}
+        />
+        <Field
+          label="Issue Date *"
+          type="date"
+          value={data.idIssueDate}
+          onChange={(v) => update("idIssueDate", v)}
+        />
+        <Field
+          label="Expiry Date *"
+          type="date"
+          value={data.idExpiryDate}
+          onChange={(v) => update("idExpiryDate", v)}
+        />
       </div>
       <Separator />
       <div className="space-y-3">
         <h3 className="text-sm font-semibold">Upload Supporting Documents</h3>
         <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
           <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm font-medium">Drop files here or click to upload</p>
-          <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG up to 5MB each</p>
+          <p className="text-sm font-medium">
+            Drop files here or click to upload
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            PDF, JPG, PNG up to 5MB each
+          </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {classification === "individual" && (
@@ -671,7 +960,8 @@ function OwnershipStep({ classification, data, update }: StepProps) {
         <div>
           <Label>Beneficial Owners (≥ 25% ownership)</Label>
           <p className="text-xs text-muted-foreground mb-2">
-            List full name, DOB, nationality, ownership % and nature of control for each.
+            List full name, DOB, nationality, ownership % and nature of control
+            for each.
           </p>
           <Textarea
             rows={5}
@@ -703,7 +993,8 @@ function OwnershipStep({ classification, data, update }: StepProps) {
         <div>
           <Label>Partners</Label>
           <p className="text-xs text-muted-foreground mb-2">
-            List each partner: full name, DOB, nationality, type (general/limited), and ownership %.
+            List each partner: full name, DOB, nationality, type
+            (general/limited), and ownership %.
           </p>
           <Textarea
             rows={6}
@@ -777,12 +1068,27 @@ function OwnershipStep({ classification, data, update }: StepProps) {
 }
 
 function Field({
-  label, value, onChange, type = "text", placeholder,
-}: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
+}) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
-      <Input type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }

@@ -189,7 +189,7 @@ export default function KycOnboarding() {
   };
 
   const toggleArray = (
-    key: "sourceOfFunds" | "highRiskIndicators",
+    key: "sourceOfFunds" | "highRiskIndicators" | "primarySourceOfFunds",
     value: string,
   ) => {
     setData((d) => {

@@ -1364,3 +1364,614 @@ function DeclarationStep({
     </div>
   );
 }
+
+/* --------------------- Corporate: Entity Details --------------------- */
+
+const entityTypeOptions = [
+  "Private Limited Company",
+  "Public Limited Company",
+  "Partnership",
+  "Trust",
+  "Foundation",
+  "Other",
+];
+
+const annualRevenueOptions = [
+  "Less than $100,000",
+  "$100,000 - $500,000",
+  "$500,000 - $5,000,000",
+  "Over $5,000,000",
+];
+
+const numberOfEmployeesOptions = ["1-10", "11-50", "51-200", "Over 200"];
+
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Select",
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <Label className="text-xs">{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="mt-1.5">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={opt} value={opt}>
+              {opt}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function CorporateDetailsStep({
+  data,
+  update,
+}: {
+  data: KycData;
+  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Section A — Entity Details</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="Legal Entity Name *"
+            value={data.legalEntityName}
+            onChange={(v) => update("legalEntityName", v)}
+          />
+          <SelectField
+            label="Entity Type *"
+            value={data.entityType}
+            options={entityTypeOptions}
+            onChange={(v) => update("entityType", v)}
+            placeholder="Select entity type"
+          />
+          {data.entityType === "Other" && (
+            <div className="sm:col-span-2">
+              <Field
+                label="Please specify entity type *"
+                value={data.entityTypeOther}
+                onChange={(v) => update("entityTypeOther", v)}
+              />
+            </div>
+          )}
+          <Field
+            label="Registration / Company Number *"
+            value={data.registrationNumber}
+            onChange={(v) => update("registrationNumber", v)}
+          />
+          <Field
+            label="Tax Jurisdiction *"
+            value={data.taxJurisdiction}
+            onChange={(v) => update("taxJurisdiction", v)}
+          />
+          <Field
+            label="Date Established *"
+            type="date"
+            value={data.dateEstablished}
+            onChange={(v) => update("dateEstablished", v)}
+          />
+        </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Registered Business Address</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <Field
+              label="Street *"
+              value={data.regStreet}
+              onChange={(v) => update("regStreet", v)}
+            />
+          </div>
+          <Field
+            label="City *"
+            value={data.regCity}
+            onChange={(v) => update("regCity", v)}
+          />
+          <Field
+            label="State / Province"
+            value={data.regState}
+            onChange={(v) => update("regState", v)}
+          />
+          <Field
+            label="Postal Code *"
+            value={data.regPostalCode}
+            onChange={(v) => update("regPostalCode", v)}
+          />
+          <Field
+            label="Country *"
+            value={data.regCountry}
+            onChange={(v) => update("regCountry", v)}
+          />
+        </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Business Activity Information</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <Field
+              label="Primary Business Activity *"
+              value={data.primaryBusinessActivity}
+              onChange={(v) => update("primaryBusinessActivity", v)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs">Detailed Business Description *</Label>
+            <Textarea
+              rows={4}
+              className="mt-1.5"
+              value={data.businessDescription}
+              onChange={(e) => update("businessDescription", e.target.value)}
+            />
+          </div>
+          <SelectField
+            label="Estimated Annual Revenue *"
+            value={data.annualRevenue}
+            options={annualRevenueOptions}
+            onChange={(v) => update("annualRevenue", v)}
+            placeholder="Select range"
+          />
+          <SelectField
+            label="Number of Employees *"
+            value={data.numberOfEmployees}
+            options={numberOfEmployeesOptions}
+            onChange={(v) => update("numberOfEmployees", v)}
+            placeholder="Select range"
+          />
+          <Field
+            label="Countries of Operation *"
+            value={data.countriesOfOperation}
+            onChange={(v) => update("countriesOfOperation", v)}
+            placeholder="e.g. UK, US, UAE"
+          />
+          <Field
+            label="Company Website"
+            value={data.website}
+            onChange={(v) => update("website", v)}
+            placeholder="https://"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --------------------- Corporate: Ownership & Control --------------------- */
+
+const natureOfControlOptions = [
+  "Direct Shareholding",
+  "Indirect Shareholding",
+  "Voting Rights",
+  "Other Control Mechanisms",
+];
+
+const pepStatusOptions = [
+  "Not a PEP",
+  "This person is a Politically Exposed Person (PEP)",
+  "Has close association with a PEP",
+];
+
+const natureOfRelationshipOptions = [
+  "Subsidiary",
+  "Affiliate",
+  "Parent Company",
+  "Joint Venture",
+  "Other",
+];
+
+function CorporateOwnershipStep({
+  data,
+  update,
+}: {
+  data: KycData;
+  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+}) {
+  const updateOwner = (i: number, patch: Partial<BeneficialOwner>) => {
+    const list = [...data.beneficialOwnersList];
+    list[i] = { ...list[i], ...patch };
+    update("beneficialOwnersList", list);
+  };
+  const addOwner = () =>
+    update("beneficialOwnersList", [
+      ...data.beneficialOwnersList,
+      { ...emptyBeneficialOwner },
+    ]);
+  const removeOwner = (i: number) =>
+    update(
+      "beneficialOwnersList",
+      data.beneficialOwnersList.filter((_, idx) => idx !== i),
+    );
+
+  const updateDirector = (i: number, patch: Partial<DirectorOfficer>) => {
+    const list = [...data.directorsList];
+    list[i] = { ...list[i], ...patch };
+    update("directorsList", list);
+  };
+  const addDirector = () =>
+    update("directorsList", [...data.directorsList, { ...emptyDirector }]);
+  const removeDirector = (i: number) =>
+    update(
+      "directorsList",
+      data.directorsList.filter((_, idx) => idx !== i),
+    );
+
+  const updateRelated = (i: number, patch: Partial<RelatedEntity>) => {
+    const list = [...data.relatedEntitiesList];
+    list[i] = { ...list[i], ...patch };
+    update("relatedEntitiesList", list);
+  };
+  const addRelated = () =>
+    update("relatedEntitiesList", [
+      ...data.relatedEntitiesList,
+      { ...emptyRelatedEntity },
+    ]);
+  const removeRelated = (i: number) =>
+    update(
+      "relatedEntitiesList",
+      data.relatedEntitiesList.filter((_, idx) => idx !== i),
+    );
+
+  // Auto-init first row when "Yes" selected
+  useEffect(() => {
+    if (
+      data.hasBeneficialOwner === "yes" &&
+      data.beneficialOwnersList.length === 0
+    ) {
+      addOwner();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.hasBeneficialOwner]);
+
+  useEffect(() => {
+    if (
+      data.hasRelatedEntity === "yes" &&
+      data.relatedEntitiesList.length === 0
+    ) {
+      addRelated();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.hasRelatedEntity]);
+
+  return (
+    <div className="space-y-8">
+      {/* Beneficial Ownership */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold">Beneficial Ownership Structure</h3>
+        <p className="text-xs text-muted-foreground">
+          A beneficial owner is any individual who ultimately owns or controls
+          25% or more of the entity, or on whose behalf a transaction is being
+          conducted. Please list all individuals meeting this threshold.
+        </p>
+        <div>
+          <Label className="text-xs mb-2 block">
+            Does any individual own 25% or more of the entity? *
+          </Label>
+          <YesNoChecks
+            value={data.hasBeneficialOwner}
+            onChange={(v) => update("hasBeneficialOwner", v)}
+          />
+        </div>
+
+        {data.hasBeneficialOwner === "yes" && (
+          <div className="space-y-4 pt-2">
+            {data.beneficialOwnersList.map((owner, i) => (
+              <RepeaterCard
+                key={i}
+                title={`Beneficial Owner ${i + 1}`}
+                onRemove={
+                  data.beneficialOwnersList.length > 1
+                    ? () => removeOwner(i)
+                    : undefined
+                }
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field
+                    label="First Name *"
+                    value={owner.firstName}
+                    onChange={(v) => updateOwner(i, { firstName: v })}
+                  />
+                  <Field
+                    label="Last Name *"
+                    value={owner.lastName}
+                    onChange={(v) => updateOwner(i, { lastName: v })}
+                  />
+                  <Field
+                    label="Date of Birth *"
+                    type="date"
+                    value={owner.dob}
+                    onChange={(v) => updateOwner(i, { dob: v })}
+                  />
+                  <Field
+                    label="Nationality *"
+                    value={owner.nationality}
+                    onChange={(v) => updateOwner(i, { nationality: v })}
+                  />
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Residential Address *"
+                      value={owner.residentialAddress}
+                      onChange={(v) =>
+                        updateOwner(i, { residentialAddress: v })
+                      }
+                    />
+                  </div>
+                  <Field
+                    label="Ownership Percentage *"
+                    value={owner.ownershipPercentage}
+                    onChange={(v) =>
+                      updateOwner(i, { ownershipPercentage: v })
+                    }
+                    placeholder="e.g. 30%"
+                  />
+                  <SelectField
+                    label="Nature of Control *"
+                    value={owner.natureOfControl}
+                    options={natureOfControlOptions}
+                    onChange={(v) => updateOwner(i, { natureOfControl: v })}
+                  />
+                </div>
+              </RepeaterCard>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addOwner}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Beneficial Owner
+            </Button>
+          </div>
+        )}
+      </section>
+
+      <Separator />
+
+      {/* Directors & Officers */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold">Directors & Officers Information</h3>
+        <p className="text-xs text-muted-foreground">
+          List all directors, officers and authorized signatories of the entity.
+        </p>
+        <div className="space-y-4">
+          {data.directorsList.map((d, i) => (
+            <RepeaterCard
+              key={i}
+              title={`Director / Officer ${i + 1}`}
+              onRemove={() => removeDirector(i)}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field
+                  label="First Name *"
+                  value={d.firstName}
+                  onChange={(v) => updateDirector(i, { firstName: v })}
+                />
+                <Field
+                  label="Last Name *"
+                  value={d.lastName}
+                  onChange={(v) => updateDirector(i, { lastName: v })}
+                />
+                <Field
+                  label="Title / Position *"
+                  value={d.title}
+                  onChange={(v) => updateDirector(i, { title: v })}
+                />
+                <Field
+                  label="Date of Birth *"
+                  type="date"
+                  value={d.dob}
+                  onChange={(v) => updateDirector(i, { dob: v })}
+                />
+                <Field
+                  label="Nationality *"
+                  value={d.nationality}
+                  onChange={(v) => updateDirector(i, { nationality: v })}
+                />
+                <div className="sm:col-span-2">
+                  <Field
+                    label="Residential Address *"
+                    value={d.residentialAddress}
+                    onChange={(v) =>
+                      updateDirector(i, { residentialAddress: v })
+                    }
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <SelectField
+                    label="PEP Status *"
+                    value={d.pepStatus}
+                    options={pepStatusOptions}
+                    onChange={(v) => updateDirector(i, { pepStatus: v })}
+                  />
+                </div>
+              </div>
+            </RepeaterCard>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addDirector}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add Director / Officer
+          </Button>
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* Related Entities */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-semibold">Related Entities Declaration</h3>
+        <p className="text-xs text-muted-foreground">
+          Please disclose all entities where any shareholder of the applicant
+          entity owns 20% or more, or exercises significant control. This
+          includes subsidiaries, affiliates, parent companies, and any other
+          related entities.
+        </p>
+        <div>
+          <Label className="text-xs mb-2 block">
+            Does any individual own 20% or more of the entity? *
+          </Label>
+          <YesNoChecks
+            value={data.hasRelatedEntity}
+            onChange={(v) => update("hasRelatedEntity", v)}
+          />
+        </div>
+
+        {data.hasRelatedEntity === "yes" && (
+          <div className="space-y-4 pt-2">
+            {data.relatedEntitiesList.map((r, i) => (
+              <RepeaterCard
+                key={i}
+                title={`Related Entity ${i + 1}`}
+                onRemove={
+                  data.relatedEntitiesList.length > 1
+                    ? () => removeRelated(i)
+                    : undefined
+                }
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field
+                    label="Related Entity Name *"
+                    value={r.entityName}
+                    onChange={(v) => updateRelated(i, { entityName: v })}
+                  />
+                  <Field
+                    label="Registration Number *"
+                    value={r.registrationNumber}
+                    onChange={(v) =>
+                      updateRelated(i, { registrationNumber: v })
+                    }
+                  />
+                  <Field
+                    label="Jurisdiction of Incorporation *"
+                    value={r.jurisdiction}
+                    onChange={(v) => updateRelated(i, { jurisdiction: v })}
+                  />
+                  <Field
+                    label="Business Activity *"
+                    value={r.businessActivity}
+                    onChange={(v) =>
+                      updateRelated(i, { businessActivity: v })
+                    }
+                  />
+                  <Field
+                    label="Name of Shareholder *"
+                    value={r.shareholderName}
+                    onChange={(v) =>
+                      updateRelated(i, { shareholderName: v })
+                    }
+                  />
+                  <Field
+                    label="Ownership Percentage *"
+                    value={r.ownershipPercentage}
+                    onChange={(v) =>
+                      updateRelated(i, { ownershipPercentage: v })
+                    }
+                    placeholder="e.g. 25%"
+                  />
+                  <div className="sm:col-span-2">
+                    <SelectField
+                      label="Nature of Relationship *"
+                      value={r.natureOfRelationship}
+                      options={natureOfRelationshipOptions}
+                      onChange={(v) =>
+                        updateRelated(i, { natureOfRelationship: v })
+                      }
+                    />
+                  </div>
+                </div>
+              </RepeaterCard>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addRelated}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Related Entity
+            </Button>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function YesNoChecks({
+  value,
+  onChange,
+}: {
+  value: "yes" | "no" | "";
+  onChange: (v: "yes" | "no") => void;
+}) {
+  return (
+    <div className="flex gap-3">
+      <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer hover:border-primary/40">
+        <Checkbox
+          checked={value === "yes"}
+          onCheckedChange={() => onChange("yes")}
+        />
+        <span className="text-sm">Yes</span>
+      </Label>
+      <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer hover:border-primary/40">
+        <Checkbox
+          checked={value === "no"}
+          onCheckedChange={() => onChange("no")}
+        />
+        <span className="text-sm">No</span>
+      </Label>
+    </div>
+  );
+}
+
+function RepeaterCard({
+  title,
+  onRemove,
+  children,
+}: {
+  title: string;
+  onRemove?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-semibold">{title}</h4>
+        {onRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-1" /> Remove
+          </Button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}

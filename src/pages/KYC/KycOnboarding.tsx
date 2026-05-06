@@ -873,18 +873,15 @@ function IdentificationStep({ classification, data, update }: StepProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {classification === "individual" && (
             <>
-              <FileField label="Government-issued ID *" />
+              <FileField label="Passport / National ID *" />
               <FileField label="Proof of Address *" />
             </>
           )}
           {classification === "corporate" && (
             <>
-              <FileField label="Certificate of Incorporation *" />
-              <FileField label="Memorandum & Articles of Association *" />
-              <FileField label="Register of Directors *" />
-              <FileField label="Register of Shareholders *" />
-              <FileField label="Proof of Registered Address *" />
-              <FileField label="Authorized Representative ID *" />
+              <FileField label="Certificate of Incorporation / Registration *" />
+              <FileField label="Register of Directors & Shareholders *" />
+              <FileField label="Proof of Business Address (utility bill, bank statement) *" />
             </>
           )}
           {classification === "partnership" && (

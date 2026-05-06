@@ -40,8 +40,19 @@ import {
   User,
   Handshake,
   Landmark,
+  Plus,
+  Trash2,
 } from "lucide-react";
-import { KycData, initialData } from "./data";
+import {
+  KycData,
+  initialData,
+  emptyBeneficialOwner,
+  emptyDirector,
+  emptyRelatedEntity,
+  type BeneficialOwner,
+  type DirectorOfficer,
+  type RelatedEntity,
+} from "./data";
 
 const transactionPatterns = [
   "Domestic transfers",

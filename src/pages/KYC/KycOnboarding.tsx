@@ -809,49 +809,168 @@ function DetailsStep({ classification, data, update }: StepProps) {
 
   if (classification === "corporate") {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field
-          label="Legal Entity Name *"
-          value={data.legalEntityName}
-          onChange={(v) => update("legalEntityName", v)}
-        />
-        <Field
-          label="Trading / Commercial Name"
-          value={data.tradingName}
-          onChange={(v) => update("tradingName", v)}
-        />
-        <Field
-          label="Registration Number *"
-          value={data.registrationNumber}
-          onChange={(v) => update("registrationNumber", v)}
-        />
-        <Field
-          label="Country of Incorporation *"
-          value={data.incorporationCountry}
-          onChange={(v) => update("incorporationCountry", v)}
-        />
-        <Field
-          label="Date of Incorporation *"
-          type="date"
-          value={data.incorporationDate}
-          onChange={(v) => update("incorporationDate", v)}
-        />
-        <Field
-          label="Business Type / Industry *"
-          value={data.businessType}
-          onChange={(v) => update("businessType", v)}
-        />
-        <Field
-          label="Tax ID *"
-          value={data.taxId}
-          onChange={(v) => update("taxId", v)}
-        />
-        <Field
-          label="Company Website"
-          value={data.website}
-          onChange={(v) => update("website", v)}
-          placeholder="https://"
-        />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="Legal Entity Name *"
+            value={data.legalEntityName}
+            onChange={(v) => update("legalEntityName", v)}
+          />
+          <div className="space-y-1.5">
+            <Label className="text-xs">Entity Type *</Label>
+            <Select
+              value={data.entityType}
+              onValueChange={(v) => update("entityType", v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select entity type" />
+              </SelectTrigger>
+              <SelectContent>
+                {ENTITY_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {data.entityType === "Other" && (
+            <div className="sm:col-span-2">
+              <Field
+                label="Specify Entity Type *"
+                value={data.entityTypeOther}
+                onChange={(v) => update("entityTypeOther", v)}
+              />
+            </div>
+          )}
+          <Field
+            label="Registration / Company Number *"
+            value={data.registrationNumber}
+            onChange={(v) => update("registrationNumber", v)}
+          />
+          <Field
+            label="Tax Jurisdiction *"
+            value={data.taxJurisdiction}
+            onChange={(v) => update("taxJurisdiction", v)}
+          />
+          <Field
+            label="Date Established *"
+            type="date"
+            value={data.dateEstablished}
+            onChange={(v) => update("dateEstablished", v)}
+          />
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold mb-3">
+            Registered Business Address
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Field
+                label="Street *"
+                value={data.regStreet}
+                onChange={(v) => update("regStreet", v)}
+              />
+            </div>
+            <Field
+              label="City *"
+              value={data.regCity}
+              onChange={(v) => update("regCity", v)}
+            />
+            <Field
+              label="State / Province"
+              value={data.regState}
+              onChange={(v) => update("regState", v)}
+            />
+            <Field
+              label="Postal Code *"
+              value={data.regPostalCode}
+              onChange={(v) => update("regPostalCode", v)}
+            />
+            <Field
+              label="Country *"
+              value={data.regCountry}
+              onChange={(v) => update("regCountry", v)}
+            />
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h3 className="text-sm font-semibold mb-1">
+            Business Activity Information
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+            <div className="sm:col-span-2">
+              <Field
+                label="Primary Business Activity *"
+                value={data.primaryBusinessActivity}
+                onChange={(v) => update("primaryBusinessActivity", v)}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs">Detailed Business Description *</Label>
+              <Textarea
+                rows={4}
+                className="mt-1.5"
+                value={data.businessDescription}
+                onChange={(e) =>
+                  update("businessDescription", e.target.value)
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Estimated Annual Revenue *</Label>
+              <Select
+                value={data.annualRevenue}
+                onValueChange={(v) => update("annualRevenue", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select range" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ANNUAL_REVENUE_RANGES.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Number of Employees *</Label>
+              <Select
+                value={data.numberOfEmployees}
+                onValueChange={(v) => update("numberOfEmployees", v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select range" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EMPLOYEE_RANGES.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Field
+              label="Countries of Operation *"
+              value={data.countriesOfOperation}
+              onChange={(v) => update("countriesOfOperation", v)}
+              placeholder="e.g. UK, US, UAE"
+            />
+            <Field
+              label="Company Website"
+              value={data.website}
+              onChange={(v) => update("website", v)}
+              placeholder="https://"
+            />
+          </div>
+        </div>
       </div>
     );
   }

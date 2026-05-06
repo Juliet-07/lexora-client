@@ -9,6 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -133,11 +140,11 @@ export default function KycOnboarding() {
   };
 
   const toggleArray = (
-    key: "sourceOfFunds" | "highRiskIndicators",
+    key: "sourceOfFunds" | "highRiskIndicators" | "transactionData" | "primarySourceOfFunds",
     value: string,
   ) => {
     setData((d) => {
-      const arr = d[key];
+      const arr = (d[key] as string[]) || [];
       return {
         ...d,
         [key]: arr.includes(value)
@@ -149,6 +156,25 @@ export default function KycOnboarding() {
 
   // Conditional steps depending on classification
   const steps = useMemo(() => {
+    if (classification === "individual") {
+      return [
+        { id: "details", title: "Personal Details", icon: User },
+        { id: "employment", title: "Employment Details", icon: Building2 },
+        { id: "wealth", title: "Source of Wealth", icon: FileText },
+        { id: "identification", title: "Identification", icon: Upload },
+        { id: "declaration", title: "Declaration", icon: PenLine },
+      ];
+    }
+    if (classification === "corporate") {
+      return [
+        { id: "details", title: "Entity Details", icon: Building2 },
+        { id: "ownership", title: "Ownership & Control", icon: Users },
+        { id: "aml", title: "AML Risk", icon: AlertTriangle },
+        { id: "identification", title: "Identification", icon: Upload },
+        { id: "declaration", title: "Declaration", icon: PenLine },
+      ];
+    }
+    // Partnership / Trust — keep prior arrangement
     const base = [
       {
         id: "details",
@@ -159,16 +185,10 @@ export default function KycOnboarding() {
       },
       { id: "address", title: "Address & Contact", icon: Building2 },
       { id: "identification", title: "Identification", icon: Upload },
+      { id: "ownership", title: "Ownership & Control", icon: Users },
+      { id: "aml", title: "AML Risk", icon: AlertTriangle },
+      { id: "declaration", title: "Declaration", icon: PenLine },
     ];
-    if (
-      classification === "corporate" ||
-      classification === "partnership" ||
-      classification === "trust"
-    ) {
-      base.push({ id: "ownership", title: "Ownership & Control", icon: Users });
-    }
-    base.push({ id: "aml", title: "AML Risk", icon: AlertTriangle });
-    base.push({ id: "declaration", title: "Declaration", icon: PenLine });
     return base;
   }, [classification]);
 
@@ -336,6 +356,18 @@ export default function KycOnboarding() {
               />
             )}
 
+            {currentStepId === "employment" && (
+              <EmploymentStep data={data} update={update} />
+            )}
+
+            {currentStepId === "wealth" && (
+              <WealthStep
+                data={data}
+                update={update}
+                toggleArray={toggleArray}
+              />
+            )}
+
             {currentStepId === "address" && (
               <div className="space-y-5">
                 <div>
@@ -442,7 +474,7 @@ export default function KycOnboarding() {
                         <Checkbox
                           checked={data.transactionData.includes(opt)}
                           onCheckedChange={() =>
-                            toggleArray("sourceOfFunds", opt)
+                            toggleArray("transactionData", opt)
                           }
                         />
                         <span className="text-sm">{opt}</span>
@@ -539,78 +571,11 @@ export default function KycOnboarding() {
             )}
 
             {currentStepId === "declaration" && (
-              <div className="space-y-5">
-                <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
-                  <p className="font-semibold">Declaration</p>
-                  <p>I/We hereby declare that:</p>
-                  <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                    <li>
-                      All information provided is true, accurate, and complete
-                      to the best of my/our knowledge.
-                    </li>
-                    <li>
-                      I/We understand that providing false or misleading
-                      information is a serious offense and may result in legal
-                      consequences.
-                    </li>
-                    <li>
-                      I/We will notify the institution immediately of any
-                      material changes to the information provided.
-                    </li>
-                    <li>
-                      I/We authorize the institution to verify the information
-                      provided through appropriate channels.
-                    </li>
-                  </ul>
-                </div>
-                <div className="space-y-3">
-                  <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox
-                      checked={data.agreeTrue}
-                      onCheckedChange={(v) => update("agreeTrue", !!v)}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm">
-                      I/We consent to the collection, processing, and storage of personalz.
-                    </span>
-                  </Label>
-                  <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox
-                      checked={data.agreeUpdate}
-                      onCheckedChange={(v) => update("agreeUpdate", !!v)}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm">
-                      I agree to update you of any material changes within 30
-                      days.
-                    </span>
-                  </Label>
-                  <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox
-                      checked={data.agreeConsent}
-                      onCheckedChange={(v) => update("agreeConsent", !!v)}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm">
-                      I consent to the processing of my personal data for
-                      KYC/AML compliance purposes.
-                    </span>
-                  </Label>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field
-                    label="Signature (type full name) *"
-                    value={data.signature}
-                    onChange={(v) => update("signature", v)}
-                  />
-                  <Field
-                    label="Date *"
-                    type="date"
-                    value={data.signatureDate}
-                    onChange={(v) => update("signatureDate", v)}
-                  />
-                </div>
-              </div>
+              <DeclarationStep
+                classification={classification}
+                data={data}
+                update={update}
+              />
             )}
           </CardContent>
         </Card>
@@ -661,65 +626,100 @@ type StepProps = {
 function DetailsStep({ classification, data, update }: StepProps) {
   if (classification === "individual") {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field
-          label="Full Legal Name *"
-          value={data.fullName}
-          onChange={(v) => update("fullName", v)}
-        />
-        <Field
-          label="Date of Birth *"
-          type="date"
-          value={data.dob}
-          onChange={(v) => update("dob", v)}
-        />
-        <Field
-          label="Place of Birth"
-          value={data.placeOfBirth}
-          onChange={(v) => update("placeOfBirth", v)}
-        />
-        <Field
-          label="Nationality *"
-          value={data.nationality}
-          onChange={(v) => update("nationality", v)}
-        />
-        <Field
-          label="Tax Residency Country *"
-          value={data.taxResidency}
-          onChange={(v) => update("taxResidency", v)}
-        />
-        <Field
-          label="Tax ID / TIN *"
-          value={data.taxId}
-          onChange={(v) => update("taxId", v)}
-        />
-        <Field
-          label="Occupation"
-          value={data.occupation}
-          onChange={(v) => update("occupation", v)}
-        />
-        <Field
-          label="Employer"
-          value={data.employer}
-          onChange={(v) => update("employer", v)}
-        />
-        <Field
-          label="Source of Wealth"
-          value={data.sourceOfWealth}
-          onChange={(v) => update("sourceOfWealth", v)}
-        />
-        <Field
-          label="Estimated Net Worth"
-          value={data.netWorth}
-          onChange={(v) => update("netWorth", v)}
-          placeholder="e.g. $50,000 - $250,000"
-        />
-        <Field
-          label="Annual Income Range"
-          value={data.annualIncome}
-          onChange={(v) => update("annualIncome", v)}
-          placeholder="e.g. $25,000 - $75,000"
-        />
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Personal Information</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Full Legal Name *"
+              value={data.fullName}
+              onChange={(v) => update("fullName", v)}
+            />
+            <Field
+              label="Date of Birth *"
+              type="date"
+              value={data.dob}
+              onChange={(v) => update("dob", v)}
+            />
+            <Field
+              label="Place of Birth *"
+              value={data.placeOfBirth}
+              onChange={(v) => update("placeOfBirth", v)}
+            />
+            <Field
+              label="Nationality *"
+              value={data.nationality}
+              onChange={(v) => update("nationality", v)}
+            />
+            <Field
+              label="Tax Residency Country *"
+              value={data.taxResidency}
+              onChange={(v) => update("taxResidency", v)}
+            />
+            <Field
+              label="Tax ID / TIN *"
+              value={data.taxId}
+              onChange={(v) => update("taxId", v)}
+            />
+          </div>
+        </div>
+        <Separator />
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Residential Address</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Field
+                label="Street Address *"
+                value={data.street}
+                onChange={(v) => update("street", v)}
+              />
+            </div>
+            <Field
+              label="City / Town *"
+              value={data.city}
+              onChange={(v) => update("city", v)}
+            />
+            <Field
+              label="State / Province"
+              value={data.state}
+              onChange={(v) => update("state", v)}
+            />
+            <Field
+              label="Postal Code *"
+              value={data.postalCode}
+              onChange={(v) => update("postalCode", v)}
+            />
+            <Field
+              label="Country *"
+              value={data.country}
+              onChange={(v) => update("country", v)}
+            />
+          </div>
+        </div>
+        <Separator />
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Contact Information</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Primary Phone *"
+              value={data.primaryPhone}
+              onChange={(v) => update("primaryPhone", v)}
+            />
+            <Field
+              label="Secondary Phone"
+              value={data.secondaryPhone}
+              onChange={(v) => update("secondaryPhone", v)}
+            />
+            <div className="sm:col-span-2">
+              <Field
+                label="Email Address *"
+                type="email"
+                value={data.email}
+                onChange={(v) => update("email", v)}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -908,18 +908,15 @@ function IdentificationStep({ classification, data, update }: StepProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {classification === "individual" && (
             <>
-              <FileField label="Government-issued ID *" />
+              <FileField label="Passport / National ID *" />
               <FileField label="Proof of Address *" />
             </>
           )}
           {classification === "corporate" && (
             <>
-              <FileField label="Certificate of Incorporation *" />
-              <FileField label="Memorandum & Articles of Association *" />
-              <FileField label="Register of Directors *" />
-              <FileField label="Register of Shareholders *" />
-              <FileField label="Proof of Registered Address *" />
-              <FileField label="Authorized Representative ID *" />
+              <FileField label="Certificate of Incorporation / Registration *" />
+              <FileField label="Register of Directors & Shareholders *" />
+              <FileField label="Proof of Business Address (utility bill, bank statement) *" />
             </>
           )}
           {classification === "partnership" && (
@@ -1091,6 +1088,342 @@ function FileField({ label }: { label: string }) {
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
       <Input type="file" />
+    </div>
+  );
+}
+
+/* --------------------- Individual: Employment Step --------------------- */
+
+const employmentStatusOptions = [
+  "Employed",
+  "Self Employed",
+  "Unemployed",
+  "Retired",
+  "Student",
+  "Other",
+];
+
+function EmploymentStep({
+  data,
+  update,
+}: {
+  data: KycData;
+  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <Label className="text-xs">Employment Status *</Label>
+        <Select
+          value={data.employmentStatus}
+          onValueChange={(v) => update("employmentStatus", v)}
+        >
+          <SelectTrigger className="mt-1.5">
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            {employmentStatusOptions.map((opt) => (
+              <SelectItem key={opt} value={opt}>
+                {opt}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Field
+        label="Employer Name"
+        value={data.employer}
+        onChange={(v) => update("employer", v)}
+      />
+      <Field
+        label="Occupation / Job Title"
+        value={data.occupation}
+        onChange={(v) => update("occupation", v)}
+      />
+      <Field
+        label="Industry Sector"
+        value={data.industrySector}
+        onChange={(v) => update("industrySector", v)}
+      />
+      <div className="sm:col-span-2">
+        <Field
+          label="Employer Address"
+          value={data.employerAddress}
+          onChange={(v) => update("employerAddress", v)}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* --------------------- Individual: Wealth Step --------------------- */
+
+const primaryFundsOptions = [
+  "Employment Income",
+  "Business Income",
+  "Savings",
+  "Investments",
+  "Inheritance",
+  "Gift",
+  "Other",
+];
+
+const netWorthOptions = [
+  "Less than $50,000",
+  "$50,000 - $250,000",
+  "$250,000 - $1,000,000",
+  "Over $1,000,000",
+];
+
+const annualIncomeOptions = [
+  "Less than $25,000",
+  "$25,000 - $75,000",
+  "$75,000 - $150,000",
+  "Over $150,000",
+];
+
+function WealthStep({
+  data,
+  update,
+  toggleArray,
+}: {
+  data: KycData;
+  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+  toggleArray: (
+    key: "primarySourceOfFunds" | "sourceOfFunds" | "highRiskIndicators" | "transactionData",
+    value: string,
+  ) => void;
+}) {
+  const otherChecked = data.primarySourceOfFunds.includes("Other");
+  return (
+    <div className="space-y-5">
+      <div>
+        <Label className="mb-2 block">Primary Source of Funds *</Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {primaryFundsOptions.map((opt) => (
+            <Label
+              key={opt}
+              className="flex items-center gap-2 border rounded-md p-2.5 cursor-pointer hover:border-primary/40"
+            >
+              <Checkbox
+                checked={data.primarySourceOfFunds.includes(opt)}
+                onCheckedChange={() =>
+                  toggleArray("primarySourceOfFunds", opt)
+                }
+              />
+              <span className="text-sm">{opt}</span>
+            </Label>
+          ))}
+        </div>
+        {otherChecked && (
+          <div className="mt-3">
+            <Field
+              label="Please specify other source of funds *"
+              value={data.primarySourceOfFundsOther}
+              onChange={(v) => update("primarySourceOfFundsOther", v)}
+            />
+          </div>
+        )}
+      </div>
+      <div>
+        <Label className="text-xs">Source of Wealth</Label>
+        <Textarea
+          rows={3}
+          className="mt-1.5"
+          placeholder="Describe how your overall wealth was accumulated"
+          value={data.sourceOfWealth}
+          onChange={(e) => update("sourceOfWealth", e.target.value)}
+        />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label className="text-xs">Estimated Net Worth *</Label>
+          <Select
+            value={data.netWorth}
+            onValueChange={(v) => update("netWorth", v)}
+          >
+            <SelectTrigger className="mt-1.5">
+              <SelectValue placeholder="Select range" />
+            </SelectTrigger>
+            <SelectContent>
+              {netWorthOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Annual Income Range *</Label>
+          <Select
+            value={data.annualIncome}
+            onValueChange={(v) => update("annualIncome", v)}
+          >
+            <SelectTrigger className="mt-1.5">
+              <SelectValue placeholder="Select range" />
+            </SelectTrigger>
+            <SelectContent>
+              {annualIncomeOptions.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --------------------- Declaration Step --------------------- */
+
+function DeclarationStep({
+  classification,
+  data,
+  update,
+}: StepProps) {
+  const isIndividual = classification === "individual";
+  return (
+    <div className="space-y-5">
+      <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
+        <p className="font-semibold">Declaration</p>
+        {isIndividual ? (
+          <>
+            <p>I hereby declare that:</p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>
+                All information provided in this form is true, accurate, and
+                complete to the best of my knowledge.
+              </li>
+              <li>
+                I understand that providing false or misleading information is
+                a serious offense and may lead to the rejection of my
+                application or termination of the relationship.
+              </li>
+              <li>
+                I will notify the institution within 30 days of any material
+                change to the information I have provided.
+              </li>
+              <li>
+                I authorize the institution to verify the information provided
+                through appropriate channels, including credit bureaus and
+                third-party data providers.
+              </li>
+              <li>
+                I consent to the collection, processing, and storage of my
+                personal data for KYC/AML compliance and ongoing due diligence
+                purposes.
+              </li>
+            </ul>
+          </>
+        ) : (
+          <>
+            <p>I/We hereby declare on behalf of the entity that:</p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>
+                All information provided is true, accurate, and complete to the
+                best of our knowledge.
+              </li>
+              <li>
+                We understand that providing false or misleading information is
+                a serious offense and may result in legal consequences.
+              </li>
+              <li>
+                We will notify the institution immediately of any material
+                changes to the information provided.
+              </li>
+              <li>
+                We authorize the institution to verify the information provided
+                through appropriate channels.
+              </li>
+            </ul>
+          </>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <Label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            checked={data.agreeTrue}
+            onCheckedChange={(v) => update("agreeTrue", !!v)}
+            className="mt-0.5"
+          />
+          <span className="text-sm">
+            {isIndividual
+              ? "I confirm that all information provided is true and accurate."
+              : "I/We confirm that all information provided is true and accurate."}
+          </span>
+        </Label>
+        <Label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            checked={data.agreeUpdate}
+            onCheckedChange={(v) => update("agreeUpdate", !!v)}
+            className="mt-0.5"
+          />
+          <span className="text-sm">
+            {isIndividual
+              ? "I agree to notify the institution of any material changes within 30 days."
+              : "I/We agree to notify the institution of any material changes within 30 days."}
+          </span>
+        </Label>
+        <Label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            checked={data.agreeConsent}
+            onCheckedChange={(v) => update("agreeConsent", !!v)}
+            className="mt-0.5"
+          />
+          <span className="text-sm">
+            {isIndividual
+              ? "I consent to the processing of my personal data for KYC/AML compliance purposes."
+              : "I/We consent to the processing of personal data for KYC/AML compliance purposes."}
+          </span>
+        </Label>
+      </div>
+
+      {isIndividual ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="Signature (type full legal name) *"
+            value={data.signature}
+            onChange={(v) => update("signature", v)}
+          />
+          <Field
+            label="Date *"
+            type="date"
+            value={data.signatureDate}
+            onChange={(v) => update("signatureDate", v)}
+          />
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold">Authorized Signatory</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Full Name of Signatory *"
+              value={data.signatoryFullName}
+              onChange={(v) => update("signatoryFullName", v)}
+            />
+            <Field
+              label="Title / Position *"
+              value={data.signatoryTitle}
+              onChange={(v) => update("signatoryTitle", v)}
+            />
+            <Field
+              label="Signature (type full name) *"
+              value={data.signature}
+              onChange={(v) => update("signature", v)}
+            />
+            <Field
+              label="Date *"
+              type="date"
+              value={data.signatureDate}
+              onChange={(v) => update("signatureDate", v)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -205,6 +205,25 @@ export default function KycOnboarding() {
 
   // Conditional steps depending on classification
   const steps = useMemo(() => {
+    if (classification === "individual") {
+      return [
+        { id: "details", title: "Personal Details", icon: User },
+        { id: "employment", title: "Employment Details", icon: Building2 },
+        { id: "wealth", title: "Source of Wealth", icon: FileText },
+        { id: "identification", title: "Identification", icon: Upload },
+        { id: "declaration", title: "Declaration", icon: PenLine },
+      ];
+    }
+    if (classification === "corporate") {
+      return [
+        { id: "details", title: "Entity Details", icon: FileText },
+        { id: "ownership", title: "Ownership & Control", icon: Users },
+        { id: "aml", title: "AML Risk", icon: AlertTriangle },
+        { id: "identification", title: "Identification", icon: Upload },
+        { id: "declaration", title: "Declaration", icon: PenLine },
+      ];
+    }
+    // partnership / trust — keep existing flow
     const base = [
       {
         id: "details",
@@ -215,16 +234,10 @@ export default function KycOnboarding() {
       },
       { id: "address", title: "Address & Contact", icon: Building2 },
       { id: "identification", title: "Identification", icon: Upload },
+      { id: "ownership", title: "Ownership & Control", icon: Users },
+      { id: "aml", title: "AML Risk", icon: AlertTriangle },
+      { id: "declaration", title: "Declaration", icon: PenLine },
     ];
-    if (
-      classification === "corporate" ||
-      classification === "partnership" ||
-      classification === "trust"
-    ) {
-      base.push({ id: "ownership", title: "Ownership & Control", icon: Users });
-    }
-    base.push({ id: "aml", title: "AML Risk", icon: AlertTriangle });
-    base.push({ id: "declaration", title: "Declaration", icon: PenLine });
     return base;
   }, [classification]);
 

@@ -1953,7 +1953,7 @@ function RepeaterCard({
 }: {
   title: string;
   onRemove?: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="border rounded-lg p-4 space-y-3 bg-muted/20">

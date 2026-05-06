@@ -626,65 +626,100 @@ type StepProps = {
 function DetailsStep({ classification, data, update }: StepProps) {
   if (classification === "individual") {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field
-          label="Full Legal Name *"
-          value={data.fullName}
-          onChange={(v) => update("fullName", v)}
-        />
-        <Field
-          label="Date of Birth *"
-          type="date"
-          value={data.dob}
-          onChange={(v) => update("dob", v)}
-        />
-        <Field
-          label="Place of Birth"
-          value={data.placeOfBirth}
-          onChange={(v) => update("placeOfBirth", v)}
-        />
-        <Field
-          label="Nationality *"
-          value={data.nationality}
-          onChange={(v) => update("nationality", v)}
-        />
-        <Field
-          label="Tax Residency Country *"
-          value={data.taxResidency}
-          onChange={(v) => update("taxResidency", v)}
-        />
-        <Field
-          label="Tax ID / TIN *"
-          value={data.taxId}
-          onChange={(v) => update("taxId", v)}
-        />
-        <Field
-          label="Occupation"
-          value={data.occupation}
-          onChange={(v) => update("occupation", v)}
-        />
-        <Field
-          label="Employer"
-          value={data.employer}
-          onChange={(v) => update("employer", v)}
-        />
-        <Field
-          label="Source of Wealth"
-          value={data.sourceOfWealth}
-          onChange={(v) => update("sourceOfWealth", v)}
-        />
-        <Field
-          label="Estimated Net Worth"
-          value={data.netWorth}
-          onChange={(v) => update("netWorth", v)}
-          placeholder="e.g. $50,000 - $250,000"
-        />
-        <Field
-          label="Annual Income Range"
-          value={data.annualIncome}
-          onChange={(v) => update("annualIncome", v)}
-          placeholder="e.g. $25,000 - $75,000"
-        />
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Personal Information</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Full Legal Name *"
+              value={data.fullName}
+              onChange={(v) => update("fullName", v)}
+            />
+            <Field
+              label="Date of Birth *"
+              type="date"
+              value={data.dob}
+              onChange={(v) => update("dob", v)}
+            />
+            <Field
+              label="Place of Birth *"
+              value={data.placeOfBirth}
+              onChange={(v) => update("placeOfBirth", v)}
+            />
+            <Field
+              label="Nationality *"
+              value={data.nationality}
+              onChange={(v) => update("nationality", v)}
+            />
+            <Field
+              label="Tax Residency Country *"
+              value={data.taxResidency}
+              onChange={(v) => update("taxResidency", v)}
+            />
+            <Field
+              label="Tax ID / TIN *"
+              value={data.taxId}
+              onChange={(v) => update("taxId", v)}
+            />
+          </div>
+        </div>
+        <Separator />
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Residential Address</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Field
+                label="Street Address *"
+                value={data.street}
+                onChange={(v) => update("street", v)}
+              />
+            </div>
+            <Field
+              label="City / Town *"
+              value={data.city}
+              onChange={(v) => update("city", v)}
+            />
+            <Field
+              label="State / Province"
+              value={data.state}
+              onChange={(v) => update("state", v)}
+            />
+            <Field
+              label="Postal Code *"
+              value={data.postalCode}
+              onChange={(v) => update("postalCode", v)}
+            />
+            <Field
+              label="Country *"
+              value={data.country}
+              onChange={(v) => update("country", v)}
+            />
+          </div>
+        </div>
+        <Separator />
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Contact Information</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label="Primary Phone *"
+              value={data.primaryPhone}
+              onChange={(v) => update("primaryPhone", v)}
+            />
+            <Field
+              label="Secondary Phone"
+              value={data.secondaryPhone}
+              onChange={(v) => update("secondaryPhone", v)}
+            />
+            <div className="sm:col-span-2">
+              <Field
+                label="Email Address *"
+                type="email"
+                value={data.email}
+                onChange={(v) => update("email", v)}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

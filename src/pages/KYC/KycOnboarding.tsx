@@ -470,6 +470,18 @@ export default function KycOnboarding() {
               </div>
             )}
 
+            {currentStepId === "employment" && (
+              <EmploymentStep data={data} update={update} />
+            )}
+
+            {currentStepId === "wealth" && (
+              <WealthStep
+                data={data}
+                update={update}
+                toggleArray={toggleArray}
+              />
+            )}
+
             {currentStepId === "identification" && (
               <IdentificationStep
                 classification={classification}

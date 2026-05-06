@@ -189,7 +189,7 @@ export default function KycOnboarding() {
   };
 
   const toggleArray = (
-    key: "sourceOfFunds" | "highRiskIndicators",
+    key: "sourceOfFunds" | "highRiskIndicators" | "primarySourceOfFunds",
     value: string,
   ) => {
     setData((d) => {
@@ -205,6 +205,25 @@ export default function KycOnboarding() {
 
   // Conditional steps depending on classification
   const steps = useMemo(() => {
+    if (classification === "individual") {
+      return [
+        { id: "details", title: "Personal Details", icon: User },
+        { id: "employment", title: "Employment Details", icon: Building2 },
+        { id: "wealth", title: "Source of Wealth", icon: FileText },
+        { id: "identification", title: "Identification", icon: Upload },
+        { id: "declaration", title: "Declaration", icon: PenLine },
+      ];
+    }
+    if (classification === "corporate") {
+      return [
+        { id: "details", title: "Entity Details", icon: FileText },
+        { id: "ownership", title: "Ownership & Control", icon: Users },
+        { id: "aml", title: "AML Risk", icon: AlertTriangle },
+        { id: "identification", title: "Identification", icon: Upload },
+        { id: "declaration", title: "Declaration", icon: PenLine },
+      ];
+    }
+    // partnership / trust — keep existing flow
     const base = [
       {
         id: "details",
@@ -215,16 +234,10 @@ export default function KycOnboarding() {
       },
       { id: "address", title: "Address & Contact", icon: Building2 },
       { id: "identification", title: "Identification", icon: Upload },
+      { id: "ownership", title: "Ownership & Control", icon: Users },
+      { id: "aml", title: "AML Risk", icon: AlertTriangle },
+      { id: "declaration", title: "Declaration", icon: PenLine },
     ];
-    if (
-      classification === "corporate" ||
-      classification === "partnership" ||
-      classification === "trust"
-    ) {
-      base.push({ id: "ownership", title: "Ownership & Control", icon: Users });
-    }
-    base.push({ id: "aml", title: "AML Risk", icon: AlertTriangle });
-    base.push({ id: "declaration", title: "Declaration", icon: PenLine });
     return base;
   }, [classification]);
 
@@ -457,6 +470,18 @@ export default function KycOnboarding() {
               </div>
             )}
 
+            {currentStepId === "employment" && (
+              <EmploymentStep data={data} update={update} />
+            )}
+
+            {currentStepId === "wealth" && (
+              <WealthStep
+                data={data}
+                update={update}
+                toggleArray={toggleArray}
+              />
+            )}
+
             {currentStepId === "identification" && (
               <IdentificationStep
                 classification={classification}
@@ -594,7 +619,11 @@ export default function KycOnboarding() {
               </div>
             )}
 
-            {currentStepId === "declaration" && (
+            {currentStepId === "declaration" && classification === "individual" && (
+              <IndividualDeclaration data={data} update={update} />
+            )}
+
+            {currentStepId === "declaration" && classification !== "individual" && (
               <div className="space-y-5">
                 <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
                   <p className="font-semibold">Declaration</p>
@@ -654,7 +683,7 @@ export default function KycOnboarding() {
                     </span>
                   </Label>
                 </div>
-                <p>
+                <p className="text-sm text-muted-foreground">
                   I/We acknowledge that I/we have been informed of my/our rights
                   regarding the processing of personal data, including the right
                   to access, correct, and request deletion of data in accordance
@@ -744,65 +773,73 @@ type StepProps = {
 function DetailsStep({ classification, data, update }: StepProps) {
   if (classification === "individual") {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field
-          label="Full Legal Name *"
-          value={data.fullName}
-          onChange={(v) => update("fullName", v)}
-        />
-        <Field
-          label="Date of Birth *"
-          type="date"
-          value={data.dob}
-          onChange={(v) => update("dob", v)}
-        />
-        <Field
-          label="Place of Birth"
-          value={data.placeOfBirth}
-          onChange={(v) => update("placeOfBirth", v)}
-        />
-        <Field
-          label="Nationality *"
-          value={data.nationality}
-          onChange={(v) => update("nationality", v)}
-        />
-        <Field
-          label="Tax Residency Country *"
-          value={data.taxResidency}
-          onChange={(v) => update("taxResidency", v)}
-        />
-        <Field
-          label="Tax ID / TIN *"
-          value={data.taxId}
-          onChange={(v) => update("taxId", v)}
-        />
-        <Field
-          label="Occupation"
-          value={data.occupation}
-          onChange={(v) => update("occupation", v)}
-        />
-        <Field
-          label="Employer"
-          value={data.employer}
-          onChange={(v) => update("employer", v)}
-        />
-        <Field
-          label="Source of Wealth"
-          value={data.sourceOfWealth}
-          onChange={(v) => update("sourceOfWealth", v)}
-        />
-        <Field
-          label="Estimated Net Worth"
-          value={data.netWorth}
-          onChange={(v) => update("netWorth", v)}
-          placeholder="e.g. $50,000 - $250,000"
-        />
-        <Field
-          label="Annual Income Range"
-          value={data.annualIncome}
-          onChange={(v) => update("annualIncome", v)}
-          placeholder="e.g. $25,000 - $75,000"
-        />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="Full Legal Name *"
+            value={data.fullName}
+            onChange={(v) => update("fullName", v)}
+          />
+          <Field
+            label="Date of Birth *"
+            type="date"
+            value={data.dob}
+            onChange={(v) => update("dob", v)}
+          />
+          <Field
+            label="Place of Birth *"
+            value={data.placeOfBirth}
+            onChange={(v) => update("placeOfBirth", v)}
+          />
+          <Field
+            label="Nationality *"
+            value={data.nationality}
+            onChange={(v) => update("nationality", v)}
+          />
+          <Field
+            label="Tax Residency Country *"
+            value={data.taxResidency}
+            onChange={(v) => update("taxResidency", v)}
+          />
+          <Field
+            label="Tax ID / TIN *"
+            value={data.taxId}
+            onChange={(v) => update("taxId", v)}
+          />
+        </div>
+        <Separator />
+        <div>
+          <h3 className="text-sm font-semibold mb-3">Residential Address</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Field
+                label="Street Address *"
+                value={data.street}
+                onChange={(v) => update("street", v)}
+              />
+            </div>
+            <Field
+              label="City / Town *"
+              value={data.city}
+              onChange={(v) => update("city", v)}
+            />
+            <Field
+              label="State / Province"
+              value={data.state}
+              onChange={(v) => update("state", v)}
+            />
+            <Field
+              label="Postal Code *"
+              value={data.postalCode}
+              onChange={(v) => update("postalCode", v)}
+            />
+            <Field
+              label="Country *"
+              value={data.country}
+              onChange={(v) => update("country", v)}
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -1116,12 +1153,11 @@ function IdentificationStep({ classification, data, update }: StepProps) {
           )}
           {classification === "corporate" && (
             <>
-              <FileField label="Certificate of Incorporation *" />
-              <FileField label="Memorandum & Articles of Association *" />
-              <FileField label="Register of Directors *" />
-              <FileField label="Register of Shareholders *" />
-              <FileField label="Proof of Registered Address *" />
-              <FileField label="Authorized Representative ID *" />
+              <FileField label="Certificate of Incorporation / Registration *" />
+              <FileField label="Register of Directors & Shareholders *" />
+              <div className="sm:col-span-2">
+                <FileField label="Proof of Business Address (utility bill, bank statement) *" />
+              </div>
             </>
           )}
           {classification === "partnership" && (
@@ -1802,6 +1838,293 @@ function CorporateOwnershipStep({
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+/* ----------------------- Individual: Employment Step ---------------------- */
+
+const EMPLOYMENT_STATUSES = [
+  "Employed",
+  "Self Employed",
+  "Unemployed",
+  "Retired",
+  "Student",
+  "Other",
+];
+
+const NET_WORTH_RANGES = [
+  "Less than $50,000",
+  "$50,000 - $250,000",
+  "$250,000 - $1,000,000",
+  "Over $1,000,000",
+];
+
+const ANNUAL_INCOME_RANGES = [
+  "Less than $25,000",
+  "$25,000 - $75,000",
+  "$75,000 - $150,000",
+  "Over $150,000",
+];
+
+const PRIMARY_SOURCE_OF_FUNDS_OPTIONS = [
+  "Employment Income",
+  "Business Income",
+  "Savings",
+  "Investments",
+  "Inheritance",
+  "Gift",
+  "Other",
+];
+
+function EmploymentStep({
+  data,
+  update,
+}: {
+  data: KycData;
+  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Employment Status *</Label>
+          <Select
+            value={data.employmentStatus}
+            onValueChange={(v) => update("employmentStatus", v)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {EMPLOYMENT_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Field
+          label="Employer Name"
+          value={data.employer}
+          onChange={(v) => update("employer", v)}
+        />
+        <Field
+          label="Occupation / Job Title"
+          value={data.occupation}
+          onChange={(v) => update("occupation", v)}
+        />
+        <Field
+          label="Industry Sector"
+          value={data.industrySector}
+          onChange={(v) => update("industrySector", v)}
+        />
+        <div className="sm:col-span-2">
+          <Field
+            label="Employer Address"
+            value={data.employerAddress}
+            onChange={(v) => update("employerAddress", v)}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------- Individual: Source of Wealth --------------------- */
+
+function WealthStep({
+  data,
+  update,
+  toggleArray,
+}: {
+  data: KycData;
+  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+  toggleArray: (
+    key: "sourceOfFunds" | "highRiskIndicators" | "primarySourceOfFunds",
+    value: string,
+  ) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div>
+        <Label className="mb-2 block">Primary Source of Funds *</Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {PRIMARY_SOURCE_OF_FUNDS_OPTIONS.map((opt) => (
+            <Label
+              key={opt}
+              className="flex items-center gap-2 border rounded-md p-2.5 cursor-pointer hover:border-primary/40"
+            >
+              <Checkbox
+                checked={data.primarySourceOfFunds.includes(opt)}
+                onCheckedChange={() => toggleArray("primarySourceOfFunds", opt)}
+              />
+              <span className="text-sm">{opt}</span>
+            </Label>
+          ))}
+        </div>
+        {data.primarySourceOfFunds.includes("Other") && (
+          <div className="mt-3">
+            <Field
+              label="Please specify"
+              value={data.primarySourceOfFundsOther}
+              onChange={(v) => update("primarySourceOfFundsOther", v)}
+            />
+          </div>
+        )}
+      </div>
+      <div>
+        <Label className="text-xs">Source of Wealth *</Label>
+        <Textarea
+          rows={3}
+          className="mt-1.5"
+          placeholder="Describe how your overall wealth was accumulated"
+          value={data.sourceOfWealth}
+          onChange={(e) => update("sourceOfWealth", e.target.value)}
+        />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Estimated Net Worth *</Label>
+          <Select
+            value={data.netWorth}
+            onValueChange={(v) => update("netWorth", v)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select range" />
+            </SelectTrigger>
+            <SelectContent>
+              {NET_WORTH_RANGES.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Annual Income Range *</Label>
+          <Select
+            value={data.annualIncome}
+            onValueChange={(v) => update("annualIncome", v)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select range" />
+            </SelectTrigger>
+            <SelectContent>
+              {ANNUAL_INCOME_RANGES.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------- Individual: Declaration -------------------------- */
+
+function IndividualDeclaration({
+  data,
+  update,
+}: {
+  data: KycData;
+  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
+        <p className="font-semibold">Personal Declaration</p>
+        <p>I hereby declare and confirm that:</p>
+        <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+          <li>
+            All information I have provided in this form is true, accurate
+            and complete to the best of my knowledge.
+          </li>
+          <li>
+            I understand that providing false, misleading or incomplete
+            information may result in the refusal of services, termination of
+            the relationship and possible legal action.
+          </li>
+          <li>
+            I will promptly notify you of any material change to the
+            information provided (e.g. address, employment, source of funds,
+            tax residency, identification documents).
+          </li>
+          <li>
+            The funds and assets I have or will deposit are derived from
+            legitimate sources and are not the proceeds of any criminal
+            activity.
+          </li>
+          <li>
+            I am not acting on behalf of any undisclosed third party.
+          </li>
+        </ul>
+      </div>
+      <div className="space-y-3">
+        <Label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            checked={data.agreeTrue}
+            onCheckedChange={(v) => update("agreeTrue", !!v)}
+            className="mt-0.5"
+          />
+          <span className="text-sm">
+            I consent to the collection, processing and storage of my personal
+            data for KYC, AML and regulatory compliance purposes.
+          </span>
+        </Label>
+        <Label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            checked={data.agreeUpdate}
+            onCheckedChange={(v) => update("agreeUpdate", !!v)}
+            className="mt-0.5"
+          />
+          <span className="text-sm">
+            I authorize verification of my identity against sanctions, PEP and
+            other compliance databases.
+          </span>
+        </Label>
+        <Label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox
+            checked={data.agreeConsent}
+            onCheckedChange={(v) => update("agreeConsent", !!v)}
+            className="mt-0.5"
+          />
+          <span className="text-sm">
+            I acknowledge my rights to access, correct and request deletion of
+            my personal data in accordance with applicable data protection
+            laws.
+          </span>
+        </Label>
+      </div>
+      <Separator />
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Signature</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <Field
+              label="Full Name *"
+              value={data.signatoryFullName}
+              onChange={(v) => update("signatoryFullName", v)}
+            />
+          </div>
+          <Field
+            label="Signature (type full name) *"
+            value={data.signature}
+            onChange={(v) => update("signature", v)}
+          />
+          <Field
+            label="Date *"
+            type="date"
+            value={data.signatureDate}
+            onChange={(v) => update("signatureDate", v)}
+          />
+        </div>
+      </div>
     </div>
   );
 }

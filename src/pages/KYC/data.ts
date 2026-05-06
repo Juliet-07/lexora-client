@@ -38,6 +38,13 @@ export interface KycData {
   taxId: string;
   occupation: string;
   employer: string;
+  // Employment details (individual)
+  employmentStatus: string;
+  industrySector: string;
+  employerAddress: string;
+  // Source of wealth (individual)
+  primarySourceOfFunds: string[];
+  primarySourceOfFundsOther: string;
   sourceOfWealth: string;
   netWorth: string;
   annualIncome: string;
@@ -173,6 +180,11 @@ export const initialData: KycData = {
   taxId: "",
   occupation: "",
   employer: "",
+  employmentStatus: "",
+  industrySector: "",
+  employerAddress: "",
+  primarySourceOfFunds: [],
+  primarySourceOfFundsOther: "",
   sourceOfWealth: "",
   netWorth: "",
   annualIncome: "",

@@ -571,78 +571,11 @@ export default function KycOnboarding() {
             )}
 
             {currentStepId === "declaration" && (
-              <div className="space-y-5">
-                <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
-                  <p className="font-semibold">Declaration</p>
-                  <p>I/We hereby declare that:</p>
-                  <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                    <li>
-                      All information provided is true, accurate, and complete
-                      to the best of my/our knowledge.
-                    </li>
-                    <li>
-                      I/We understand that providing false or misleading
-                      information is a serious offense and may result in legal
-                      consequences.
-                    </li>
-                    <li>
-                      I/We will notify the institution immediately of any
-                      material changes to the information provided.
-                    </li>
-                    <li>
-                      I/We authorize the institution to verify the information
-                      provided through appropriate channels.
-                    </li>
-                  </ul>
-                </div>
-                <div className="space-y-3">
-                  <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox
-                      checked={data.agreeTrue}
-                      onCheckedChange={(v) => update("agreeTrue", !!v)}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm">
-                      I/We consent to the collection, processing, and storage of personalz.
-                    </span>
-                  </Label>
-                  <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox
-                      checked={data.agreeUpdate}
-                      onCheckedChange={(v) => update("agreeUpdate", !!v)}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm">
-                      I agree to update you of any material changes within 30
-                      days.
-                    </span>
-                  </Label>
-                  <Label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox
-                      checked={data.agreeConsent}
-                      onCheckedChange={(v) => update("agreeConsent", !!v)}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm">
-                      I consent to the processing of my personal data for
-                      KYC/AML compliance purposes.
-                    </span>
-                  </Label>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field
-                    label="Signature (type full name) *"
-                    value={data.signature}
-                    onChange={(v) => update("signature", v)}
-                  />
-                  <Field
-                    label="Date *"
-                    type="date"
-                    value={data.signatureDate}
-                    onChange={(v) => update("signatureDate", v)}
-                  />
-                </div>
-              </div>
+              <DeclarationStep
+                classification={classification}
+                data={data}
+                update={update}
+              />
             )}
           </CardContent>
         </Card>

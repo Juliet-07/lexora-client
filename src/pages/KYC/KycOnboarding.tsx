@@ -660,18 +660,38 @@ export default function KycOnboarding() {
                   to access, correct, and request deletion of data in accordance
                   with applicable data protection laws.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field
-                    label="Signature (type full name) *"
-                    value={data.signature}
-                    onChange={(v) => update("signature", v)}
-                  />
-                  <Field
-                    label="Date *"
-                    type="date"
-                    value={data.signatureDate}
-                    onChange={(v) => update("signatureDate", v)}
-                  />
+                <Separator />
+                <div>
+                  <h3 className="text-sm font-semibold mb-1">
+                    Authorized Signatory
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    To be completed by the individual authorized to bind the
+                    entity.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field
+                      label="Full Name of Signatory *"
+                      value={data.signatoryFullName}
+                      onChange={(v) => update("signatoryFullName", v)}
+                    />
+                    <Field
+                      label="Title / Position *"
+                      value={data.signatoryTitle}
+                      onChange={(v) => update("signatoryTitle", v)}
+                    />
+                    <Field
+                      label="Signature (type full name) *"
+                      value={data.signature}
+                      onChange={(v) => update("signature", v)}
+                    />
+                    <Field
+                      label="Date *"
+                      type="date"
+                      value={data.signatureDate}
+                      onChange={(v) => update("signatureDate", v)}
+                    />
+                  </div>
                 </div>
               </div>
             )}

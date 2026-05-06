@@ -1153,12 +1153,11 @@ function IdentificationStep({ classification, data, update }: StepProps) {
           )}
           {classification === "corporate" && (
             <>
-              <FileField label="Certificate of Incorporation *" />
-              <FileField label="Memorandum & Articles of Association *" />
-              <FileField label="Register of Directors *" />
-              <FileField label="Register of Shareholders *" />
-              <FileField label="Proof of Registered Address *" />
-              <FileField label="Authorized Representative ID *" />
+              <FileField label="Certificate of Incorporation / Registration *" />
+              <FileField label="Register of Directors & Shareholders *" />
+              <div className="sm:col-span-2">
+                <FileField label="Proof of Business Address (utility bill, bank statement) *" />
+              </div>
             </>
           )}
           {classification === "partnership" && (

@@ -619,7 +619,11 @@ export default function KycOnboarding() {
               </div>
             )}
 
-            {currentStepId === "declaration" && (
+            {currentStepId === "declaration" && classification === "individual" && (
+              <IndividualDeclaration data={data} update={update} />
+            )}
+
+            {currentStepId === "declaration" && classification !== "individual" && (
               <div className="space-y-5">
                 <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
                   <p className="font-semibold">Declaration</p>
@@ -679,7 +683,7 @@ export default function KycOnboarding() {
                     </span>
                   </Label>
                 </div>
-                <p>
+                <p className="text-sm text-muted-foreground">
                   I/We acknowledge that I/we have been informed of my/our rights
                   regarding the processing of personal data, including the right
                   to access, correct, and request deletion of data in accordance

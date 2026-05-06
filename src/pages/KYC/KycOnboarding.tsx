@@ -1267,3 +1267,541 @@ function FileField({ label }: { label: string }) {
     </div>
   );
 }
+
+/* ---------------------- Corporate Ownership & Control --------------------- */
+
+function CorporateOwnershipStep({
+  data,
+  update,
+}: {
+  data: KycData;
+  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+}) {
+  const setBOList = (next: BeneficialOwner[]) =>
+    update("beneficialOwnersList", next);
+  const setDirList = (next: DirectorOfficer[]) => update("directorsList", next);
+  const setRelList = (next: RelatedEntity[]) =>
+    update("relatedEntitiesList", next);
+
+  const handleHasBO = (val: "yes" | "no") => {
+    update("hasBeneficialOwner", val);
+    if (val === "yes" && data.beneficialOwnersList.length === 0) {
+      setBOList([{ ...emptyBeneficialOwner }]);
+    }
+    if (val === "no") setBOList([]);
+  };
+
+  const handleHasRel = (val: "yes" | "no") => {
+    update("hasRelatedEntity", val);
+    if (val === "yes" && data.relatedEntitiesList.length === 0) {
+      setRelList([{ ...emptyRelatedEntity }]);
+    }
+    if (val === "no") setRelList([]);
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Beneficial Ownership */}
+      <section className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">
+            Beneficial Ownership Structure
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            A beneficial owner is any individual who ultimately owns or
+            controls 25% or more of the entity, or on whose behalf a
+            transaction is being conducted. Please list all individuals meeting
+            this threshold.
+          </p>
+        </div>
+
+        <div>
+          <Label className="text-sm">
+            Does any individual own 25% or more of the entity?
+          </Label>
+          <div className="flex gap-3 mt-2">
+            <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer">
+              <Checkbox
+                checked={data.hasBeneficialOwner === "yes"}
+                onCheckedChange={() => handleHasBO("yes")}
+              />
+              Yes
+            </Label>
+            <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer">
+              <Checkbox
+                checked={data.hasBeneficialOwner === "no"}
+                onCheckedChange={() => handleHasBO("no")}
+              />
+              No
+            </Label>
+          </div>
+        </div>
+
+        {data.hasBeneficialOwner === "yes" && (
+          <div className="space-y-4">
+            {data.beneficialOwnersList.map((owner, idx) => (
+              <div
+                key={idx}
+                className="rounded-lg border p-4 space-y-3 bg-muted/20"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">
+                    Beneficial Owner #{idx + 1}
+                  </p>
+                  {data.beneficialOwnersList.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setBOList(
+                          data.beneficialOwnersList.filter((_, i) => i !== idx),
+                        )
+                      }
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field
+                    label="First Name *"
+                    value={owner.firstName}
+                    onChange={(v) =>
+                      setBOList(
+                        data.beneficialOwnersList.map((o, i) =>
+                          i === idx ? { ...o, firstName: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Last Name *"
+                    value={owner.lastName}
+                    onChange={(v) =>
+                      setBOList(
+                        data.beneficialOwnersList.map((o, i) =>
+                          i === idx ? { ...o, lastName: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Date of Birth *"
+                    type="date"
+                    value={owner.dob}
+                    onChange={(v) =>
+                      setBOList(
+                        data.beneficialOwnersList.map((o, i) =>
+                          i === idx ? { ...o, dob: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Nationality *"
+                    value={owner.nationality}
+                    onChange={(v) =>
+                      setBOList(
+                        data.beneficialOwnersList.map((o, i) =>
+                          i === idx ? { ...o, nationality: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Residential Address *"
+                      value={owner.residentialAddress}
+                      onChange={(v) =>
+                        setBOList(
+                          data.beneficialOwnersList.map((o, i) =>
+                            i === idx ? { ...o, residentialAddress: v } : o,
+                          ),
+                        )
+                      }
+                    />
+                  </div>
+                  <Field
+                    label="Ownership Percentage *"
+                    value={owner.ownershipPercentage}
+                    onChange={(v) =>
+                      setBOList(
+                        data.beneficialOwnersList.map((o, i) =>
+                          i === idx ? { ...o, ownershipPercentage: v } : o,
+                        ),
+                      )
+                    }
+                    placeholder="e.g. 30%"
+                  />
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Nature of Control *</Label>
+                    <Select
+                      value={owner.natureOfControl}
+                      onValueChange={(v) =>
+                        setBOList(
+                          data.beneficialOwnersList.map((o, i) =>
+                            i === idx ? { ...o, natureOfControl: v } : o,
+                          ),
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NATURE_OF_CONTROL.map((n) => (
+                          <SelectItem key={n} value={n}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setBOList([
+                  ...data.beneficialOwnersList,
+                  { ...emptyBeneficialOwner },
+                ])
+              }
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Beneficial Owner
+            </Button>
+          </div>
+        )}
+      </section>
+
+      <Separator />
+
+      {/* Directors & Officers */}
+      <section className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">
+            Directors and Officers Information
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            List all directors, officers and authorized signatories of the
+            entity.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {data.directorsList.map((dir, idx) => (
+            <div
+              key={idx}
+              className="rounded-lg border p-4 space-y-3 bg-muted/20"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">
+                  Director / Officer #{idx + 1}
+                </p>
+                {data.directorsList.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setDirList(
+                        data.directorsList.filter((_, i) => i !== idx),
+                      )
+                    }
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field
+                  label="First Name *"
+                  value={dir.firstName}
+                  onChange={(v) =>
+                    setDirList(
+                      data.directorsList.map((o, i) =>
+                        i === idx ? { ...o, firstName: v } : o,
+                      ),
+                    )
+                  }
+                />
+                <Field
+                  label="Last Name *"
+                  value={dir.lastName}
+                  onChange={(v) =>
+                    setDirList(
+                      data.directorsList.map((o, i) =>
+                        i === idx ? { ...o, lastName: v } : o,
+                      ),
+                    )
+                  }
+                />
+                <Field
+                  label="Title / Position *"
+                  value={dir.title}
+                  onChange={(v) =>
+                    setDirList(
+                      data.directorsList.map((o, i) =>
+                        i === idx ? { ...o, title: v } : o,
+                      ),
+                    )
+                  }
+                />
+                <Field
+                  label="Date of Birth *"
+                  type="date"
+                  value={dir.dob}
+                  onChange={(v) =>
+                    setDirList(
+                      data.directorsList.map((o, i) =>
+                        i === idx ? { ...o, dob: v } : o,
+                      ),
+                    )
+                  }
+                />
+                <Field
+                  label="Nationality *"
+                  value={dir.nationality}
+                  onChange={(v) =>
+                    setDirList(
+                      data.directorsList.map((o, i) =>
+                        i === idx ? { ...o, nationality: v } : o,
+                      ),
+                    )
+                  }
+                />
+                <div className="space-y-1.5">
+                  <Label className="text-xs">PEP Status *</Label>
+                  <Select
+                    value={dir.pepStatus}
+                    onValueChange={(v) =>
+                      setDirList(
+                        data.directorsList.map((o, i) =>
+                          i === idx ? { ...o, pepStatus: v } : o,
+                        ),
+                      )
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select PEP status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PEP_STATUS.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    label="Residential Address *"
+                    value={dir.residentialAddress}
+                    onChange={(v) =>
+                      setDirList(
+                        data.directorsList.map((o, i) =>
+                          i === idx ? { ...o, residentialAddress: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setDirList([...data.directorsList, { ...emptyDirector }])
+            }
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add Director / Officer
+          </Button>
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* Related Entities */}
+      <section className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold">
+            Related Entities Declaration
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Please disclose all entities where any shareholder of the applicant
+            entity owns 20% or more, or exercises significant control. This
+            includes subsidiaries, affiliates, parent companies, and any other
+            related entities.
+          </p>
+        </div>
+
+        <div>
+          <Label className="text-sm">
+            Does any individual own 20% or more of the entity?
+          </Label>
+          <div className="flex gap-3 mt-2">
+            <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer">
+              <Checkbox
+                checked={data.hasRelatedEntity === "yes"}
+                onCheckedChange={() => handleHasRel("yes")}
+              />
+              Yes
+            </Label>
+            <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer">
+              <Checkbox
+                checked={data.hasRelatedEntity === "no"}
+                onCheckedChange={() => handleHasRel("no")}
+              />
+              No
+            </Label>
+          </div>
+        </div>
+
+        {data.hasRelatedEntity === "yes" && (
+          <div className="space-y-4">
+            {data.relatedEntitiesList.map((ent, idx) => (
+              <div
+                key={idx}
+                className="rounded-lg border p-4 space-y-3 bg-muted/20"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">
+                    Related Entity #{idx + 1}
+                  </p>
+                  {data.relatedEntitiesList.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setRelList(
+                          data.relatedEntitiesList.filter((_, i) => i !== idx),
+                        )
+                      }
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field
+                    label="Related Entity Name *"
+                    value={ent.entityName}
+                    onChange={(v) =>
+                      setRelList(
+                        data.relatedEntitiesList.map((o, i) =>
+                          i === idx ? { ...o, entityName: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Registration Number *"
+                    value={ent.registrationNumber}
+                    onChange={(v) =>
+                      setRelList(
+                        data.relatedEntitiesList.map((o, i) =>
+                          i === idx ? { ...o, registrationNumber: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Jurisdiction of Incorporation *"
+                    value={ent.jurisdiction}
+                    onChange={(v) =>
+                      setRelList(
+                        data.relatedEntitiesList.map((o, i) =>
+                          i === idx ? { ...o, jurisdiction: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Business Activity *"
+                    value={ent.businessActivity}
+                    onChange={(v) =>
+                      setRelList(
+                        data.relatedEntitiesList.map((o, i) =>
+                          i === idx ? { ...o, businessActivity: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Name of Shareholder *"
+                    value={ent.shareholderName}
+                    onChange={(v) =>
+                      setRelList(
+                        data.relatedEntitiesList.map((o, i) =>
+                          i === idx ? { ...o, shareholderName: v } : o,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label="Ownership Percentage *"
+                    value={ent.ownershipPercentage}
+                    onChange={(v) =>
+                      setRelList(
+                        data.relatedEntitiesList.map((o, i) =>
+                          i === idx ? { ...o, ownershipPercentage: v } : o,
+                        ),
+                      )
+                    }
+                    placeholder="e.g. 25%"
+                  />
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <Label className="text-xs">Nature of Relationship *</Label>
+                    <Select
+                      value={ent.natureOfRelationship}
+                      onValueChange={(v) =>
+                        setRelList(
+                          data.relatedEntitiesList.map((o, i) =>
+                            i === idx ? { ...o, natureOfRelationship: v } : o,
+                          ),
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RELATIONSHIP_TYPES.map((n) => (
+                          <SelectItem key={n} value={n}>
+                            {n}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setRelList([
+                  ...data.relatedEntitiesList,
+                  { ...emptyRelatedEntity },
+                ])
+              }
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Related Entity
+            </Button>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}

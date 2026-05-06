@@ -1150,36 +1150,7 @@ function IdentificationStep({ classification, data, update }: StepProps) {
 
 function OwnershipStep({ classification, data, update }: StepProps) {
   if (classification === "corporate") {
-    return (
-      <div className="space-y-5">
-        <div>
-          <Label>Beneficial Owners (≥ 25% ownership)</Label>
-          <p className="text-xs text-muted-foreground mb-2">
-            List full name, DOB, nationality, ownership % and nature of control
-            for each.
-          </p>
-          <Textarea
-            rows={5}
-            placeholder="e.g. Jane Doe — DOB 1980-05-12 — British — 40% — Direct Shareholding"
-            value={data.beneficialOwners}
-            onChange={(e) => update("beneficialOwners", e.target.value)}
-          />
-        </div>
-        <Separator />
-        <div>
-          <Label>Directors, Officers & Authorized Signatories</Label>
-          <p className="text-xs text-muted-foreground mb-2">
-            List full name, position, nationality, and PEP status if applicable.
-          </p>
-          <Textarea
-            rows={5}
-            placeholder="e.g. John Smith — Director — American — Not a PEP"
-            value={data.directors}
-            onChange={(e) => update("directors", e.target.value)}
-          />
-        </div>
-      </div>
-    );
+    return <CorporateOwnershipStep data={data} update={update} />;
   }
 
   if (classification === "partnership") {

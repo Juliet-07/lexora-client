@@ -133,7 +133,7 @@ export default function KycOnboarding() {
   };
 
   const toggleArray = (
-    key: "sourceOfFunds" | "highRiskIndicators" | "primarySourceOfFunds",
+    key: "sourceOfFunds" | "highRiskIndicators",
     value: string,
   ) => {
     setData((d) => {
@@ -149,25 +149,6 @@ export default function KycOnboarding() {
 
   // Conditional steps depending on classification
   const steps = useMemo(() => {
-    if (classification === "individual") {
-      return [
-        { id: "details", title: "Personal Details", icon: User },
-        { id: "employment", title: "Employment Details", icon: Building2 },
-        { id: "wealth", title: "Source of Wealth", icon: FileText },
-        { id: "identification", title: "Identification", icon: Upload },
-        { id: "declaration", title: "Declaration", icon: PenLine },
-      ];
-    }
-    if (classification === "corporate") {
-      return [
-        { id: "details", title: "Entity Details", icon: FileText },
-        { id: "ownership", title: "Ownership & Control", icon: Users },
-        { id: "aml", title: "AML Risk", icon: AlertTriangle },
-        { id: "identification", title: "Identification", icon: Upload },
-        { id: "declaration", title: "Declaration", icon: PenLine },
-      ];
-    }
-    // partnership / trust — keep existing flow
     const base = [
       {
         id: "details",
@@ -178,10 +159,16 @@ export default function KycOnboarding() {
       },
       { id: "address", title: "Address & Contact", icon: Building2 },
       { id: "identification", title: "Identification", icon: Upload },
-      { id: "ownership", title: "Ownership & Control", icon: Users },
-      { id: "aml", title: "AML Risk", icon: AlertTriangle },
-      { id: "declaration", title: "Declaration", icon: PenLine },
     ];
+    if (
+      classification === "corporate" ||
+      classification === "partnership" ||
+      classification === "trust"
+    ) {
+      base.push({ id: "ownership", title: "Ownership & Control", icon: Users });
+    }
+    base.push({ id: "aml", title: "AML Risk", icon: AlertTriangle });
+    base.push({ id: "declaration", title: "Declaration", icon: PenLine });
     return base;
   }, [classification]);
 
@@ -414,18 +401,6 @@ export default function KycOnboarding() {
               </div>
             )}
 
-            {currentStepId === "employment" && (
-              <EmploymentStep data={data} update={update} />
-            )}
-
-            {currentStepId === "wealth" && (
-              <WealthStep
-                data={data}
-                update={update}
-                toggleArray={toggleArray}
-              />
-            )}
-
             {currentStepId === "identification" && (
               <IdentificationStep
                 classification={classification}
@@ -563,11 +538,7 @@ export default function KycOnboarding() {
               </div>
             )}
 
-            {currentStepId === "declaration" && classification === "individual" && (
-              <IndividualDeclaration data={data} update={update} />
-            )}
-
-            {currentStepId === "declaration" && classification !== "individual" && (
+            {currentStepId === "declaration" && (
               <div className="space-y-5">
                 <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
                   <p className="font-semibold">Declaration</p>
@@ -626,46 +597,6 @@ export default function KycOnboarding() {
                     </span>
                   </Label>
                 </div>
-<<<<<<< HEAD
-                <p className="text-sm text-muted-foreground">
-                  I/We acknowledge that I/we have been informed of my/our rights
-                  regarding the processing of personal data, including the right
-                  to access, correct, and request deletion of data in accordance
-                  with applicable data protection laws.
-                </p>
-                <Separator />
-                <div>
-                  <h3 className="text-sm font-semibold mb-1">
-                    Authorized Signatory
-                  </h3>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    To be completed by the individual authorized to bind the
-                    entity.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field
-                      label="Full Name of Signatory *"
-                      value={data.signatoryFullName}
-                      onChange={(v) => update("signatoryFullName", v)}
-                    />
-                    <Field
-                      label="Title / Position *"
-                      value={data.signatoryTitle}
-                      onChange={(v) => update("signatoryTitle", v)}
-                    />
-                    <Field
-                      label="Signature (type full name) *"
-                      value={data.signature}
-                      onChange={(v) => update("signature", v)}
-                    />
-                    <Field
-                      label="Date *"
-                      type="date"
-                      value={data.signatureDate}
-                      onChange={(v) => update("signatureDate", v)}
-                    />
-                  </div>
-=======
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field
                     label="Signature (type full name) *"
@@ -678,7 +609,6 @@ export default function KycOnboarding() {
                     value={data.signatureDate}
                     onChange={(v) => update("signatureDate", v)}
                   />
->>>>>>> 6ebfb4b (Update KYC onboarding page)
                 </div>
               </div>
             )}
@@ -731,73 +661,65 @@ type StepProps = {
 function DetailsStep({ classification, data, update }: StepProps) {
   if (classification === "individual") {
     return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field
-            label="Full Legal Name *"
-            value={data.fullName}
-            onChange={(v) => update("fullName", v)}
-          />
-          <Field
-            label="Date of Birth *"
-            type="date"
-            value={data.dob}
-            onChange={(v) => update("dob", v)}
-          />
-          <Field
-            label="Place of Birth *"
-            value={data.placeOfBirth}
-            onChange={(v) => update("placeOfBirth", v)}
-          />
-          <Field
-            label="Nationality *"
-            value={data.nationality}
-            onChange={(v) => update("nationality", v)}
-          />
-          <Field
-            label="Tax Residency Country *"
-            value={data.taxResidency}
-            onChange={(v) => update("taxResidency", v)}
-          />
-          <Field
-            label="Tax ID / TIN *"
-            value={data.taxId}
-            onChange={(v) => update("taxId", v)}
-          />
-        </div>
-        <Separator />
-        <div>
-          <h3 className="text-sm font-semibold mb-3">Residential Address</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <Field
-                label="Street Address *"
-                value={data.street}
-                onChange={(v) => update("street", v)}
-              />
-            </div>
-            <Field
-              label="City / Town *"
-              value={data.city}
-              onChange={(v) => update("city", v)}
-            />
-            <Field
-              label="State / Province"
-              value={data.state}
-              onChange={(v) => update("state", v)}
-            />
-            <Field
-              label="Postal Code *"
-              value={data.postalCode}
-              onChange={(v) => update("postalCode", v)}
-            />
-            <Field
-              label="Country *"
-              value={data.country}
-              onChange={(v) => update("country", v)}
-            />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field
+          label="Full Legal Name *"
+          value={data.fullName}
+          onChange={(v) => update("fullName", v)}
+        />
+        <Field
+          label="Date of Birth *"
+          type="date"
+          value={data.dob}
+          onChange={(v) => update("dob", v)}
+        />
+        <Field
+          label="Place of Birth"
+          value={data.placeOfBirth}
+          onChange={(v) => update("placeOfBirth", v)}
+        />
+        <Field
+          label="Nationality *"
+          value={data.nationality}
+          onChange={(v) => update("nationality", v)}
+        />
+        <Field
+          label="Tax Residency Country *"
+          value={data.taxResidency}
+          onChange={(v) => update("taxResidency", v)}
+        />
+        <Field
+          label="Tax ID / TIN *"
+          value={data.taxId}
+          onChange={(v) => update("taxId", v)}
+        />
+        <Field
+          label="Occupation"
+          value={data.occupation}
+          onChange={(v) => update("occupation", v)}
+        />
+        <Field
+          label="Employer"
+          value={data.employer}
+          onChange={(v) => update("employer", v)}
+        />
+        <Field
+          label="Source of Wealth"
+          value={data.sourceOfWealth}
+          onChange={(v) => update("sourceOfWealth", v)}
+        />
+        <Field
+          label="Estimated Net Worth"
+          value={data.netWorth}
+          onChange={(v) => update("netWorth", v)}
+          placeholder="e.g. $50,000 - $250,000"
+        />
+        <Field
+          label="Annual Income Range"
+          value={data.annualIncome}
+          onChange={(v) => update("annualIncome", v)}
+          placeholder="e.g. $25,000 - $75,000"
+        />
       </div>
     );
   }
@@ -992,11 +914,12 @@ function IdentificationStep({ classification, data, update }: StepProps) {
           )}
           {classification === "corporate" && (
             <>
-              <FileField label="Certificate of Incorporation / Registration *" />
-              <FileField label="Register of Directors & Shareholders *" />
-              <div className="sm:col-span-2">
-                <FileField label="Proof of Business Address (utility bill, bank statement) *" />
-              </div>
+              <FileField label="Certificate of Incorporation *" />
+              <FileField label="Memorandum & Articles of Association *" />
+              <FileField label="Register of Directors *" />
+              <FileField label="Register of Shareholders *" />
+              <FileField label="Proof of Registered Address *" />
+              <FileField label="Authorized Representative ID *" />
             </>
           )}
           {classification === "partnership" && (
@@ -1171,831 +1094,3 @@ function FileField({ label }: { label: string }) {
     </div>
   );
 }
-<<<<<<< HEAD
-
-/* ---------------------- Corporate Ownership & Control --------------------- */
-
-function CorporateOwnershipStep({
-  data,
-  update,
-}: {
-  data: KycData;
-  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
-}) {
-  const setBOList = (next: BeneficialOwner[]) =>
-    update("beneficialOwnersList", next);
-  const setDirList = (next: DirectorOfficer[]) => update("directorsList", next);
-  const setRelList = (next: RelatedEntity[]) =>
-    update("relatedEntitiesList", next);
-
-  const handleHasBO = (val: "yes" | "no") => {
-    update("hasBeneficialOwner", val);
-    if (val === "yes" && data.beneficialOwnersList.length === 0) {
-      setBOList([{ ...emptyBeneficialOwner }]);
-    }
-    if (val === "no") setBOList([]);
-  };
-
-  const handleHasRel = (val: "yes" | "no") => {
-    update("hasRelatedEntity", val);
-    if (val === "yes" && data.relatedEntitiesList.length === 0) {
-      setRelList([{ ...emptyRelatedEntity }]);
-    }
-    if (val === "no") setRelList([]);
-  };
-
-  return (
-    <div className="space-y-8">
-      {/* Beneficial Ownership */}
-      <section className="space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold">
-            Beneficial Ownership Structure
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            A beneficial owner is any individual who ultimately owns or
-            controls 25% or more of the entity, or on whose behalf a
-            transaction is being conducted. Please list all individuals meeting
-            this threshold.
-          </p>
-        </div>
-
-        <div>
-          <Label className="text-sm">
-            Does any individual own 25% or more of the entity?
-          </Label>
-          <div className="flex gap-3 mt-2">
-            <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer">
-              <Checkbox
-                checked={data.hasBeneficialOwner === "yes"}
-                onCheckedChange={() => handleHasBO("yes")}
-              />
-              Yes
-            </Label>
-            <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer">
-              <Checkbox
-                checked={data.hasBeneficialOwner === "no"}
-                onCheckedChange={() => handleHasBO("no")}
-              />
-              No
-            </Label>
-          </div>
-        </div>
-
-        {data.hasBeneficialOwner === "yes" && (
-          <div className="space-y-4">
-            {data.beneficialOwnersList.map((owner, idx) => (
-              <div
-                key={idx}
-                className="rounded-lg border p-4 space-y-3 bg-muted/20"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">
-                    Beneficial Owner #{idx + 1}
-                  </p>
-                  {data.beneficialOwnersList.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setBOList(
-                          data.beneficialOwnersList.filter((_, i) => i !== idx),
-                        )
-                      }
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field
-                    label="First Name *"
-                    value={owner.firstName}
-                    onChange={(v) =>
-                      setBOList(
-                        data.beneficialOwnersList.map((o, i) =>
-                          i === idx ? { ...o, firstName: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <Field
-                    label="Last Name *"
-                    value={owner.lastName}
-                    onChange={(v) =>
-                      setBOList(
-                        data.beneficialOwnersList.map((o, i) =>
-                          i === idx ? { ...o, lastName: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <Field
-                    label="Date of Birth *"
-                    type="date"
-                    value={owner.dob}
-                    onChange={(v) =>
-                      setBOList(
-                        data.beneficialOwnersList.map((o, i) =>
-                          i === idx ? { ...o, dob: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <Field
-                    label="Nationality *"
-                    value={owner.nationality}
-                    onChange={(v) =>
-                      setBOList(
-                        data.beneficialOwnersList.map((o, i) =>
-                          i === idx ? { ...o, nationality: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <div className="sm:col-span-2">
-                    <Field
-                      label="Residential Address *"
-                      value={owner.residentialAddress}
-                      onChange={(v) =>
-                        setBOList(
-                          data.beneficialOwnersList.map((o, i) =>
-                            i === idx ? { ...o, residentialAddress: v } : o,
-                          ),
-                        )
-                      }
-                    />
-                  </div>
-                  <Field
-                    label="Ownership Percentage *"
-                    value={owner.ownershipPercentage}
-                    onChange={(v) =>
-                      setBOList(
-                        data.beneficialOwnersList.map((o, i) =>
-                          i === idx ? { ...o, ownershipPercentage: v } : o,
-                        ),
-                      )
-                    }
-                    placeholder="e.g. 30%"
-                  />
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Nature of Control *</Label>
-                    <Select
-                      value={owner.natureOfControl}
-                      onValueChange={(v) =>
-                        setBOList(
-                          data.beneficialOwnersList.map((o, i) =>
-                            i === idx ? { ...o, natureOfControl: v } : o,
-                          ),
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {NATURE_OF_CONTROL.map((n) => (
-                          <SelectItem key={n} value={n}>
-                            {n}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setBOList([
-                  ...data.beneficialOwnersList,
-                  { ...emptyBeneficialOwner },
-                ])
-              }
-            >
-              <Plus className="h-4 w-4 mr-1" /> Add Beneficial Owner
-            </Button>
-          </div>
-        )}
-      </section>
-
-      <Separator />
-
-      {/* Directors & Officers */}
-      <section className="space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold">
-            Directors and Officers Information
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            List all directors, officers and authorized signatories of the
-            entity.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          {data.directorsList.map((dir, idx) => (
-            <div
-              key={idx}
-              className="rounded-lg border p-4 space-y-3 bg-muted/20"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">
-                  Director / Officer #{idx + 1}
-                </p>
-                {data.directorsList.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setDirList(
-                        data.directorsList.filter((_, i) => i !== idx),
-                      )
-                    }
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field
-                  label="First Name *"
-                  value={dir.firstName}
-                  onChange={(v) =>
-                    setDirList(
-                      data.directorsList.map((o, i) =>
-                        i === idx ? { ...o, firstName: v } : o,
-                      ),
-                    )
-                  }
-                />
-                <Field
-                  label="Last Name *"
-                  value={dir.lastName}
-                  onChange={(v) =>
-                    setDirList(
-                      data.directorsList.map((o, i) =>
-                        i === idx ? { ...o, lastName: v } : o,
-                      ),
-                    )
-                  }
-                />
-                <Field
-                  label="Title / Position *"
-                  value={dir.title}
-                  onChange={(v) =>
-                    setDirList(
-                      data.directorsList.map((o, i) =>
-                        i === idx ? { ...o, title: v } : o,
-                      ),
-                    )
-                  }
-                />
-                <Field
-                  label="Date of Birth *"
-                  type="date"
-                  value={dir.dob}
-                  onChange={(v) =>
-                    setDirList(
-                      data.directorsList.map((o, i) =>
-                        i === idx ? { ...o, dob: v } : o,
-                      ),
-                    )
-                  }
-                />
-                <Field
-                  label="Nationality *"
-                  value={dir.nationality}
-                  onChange={(v) =>
-                    setDirList(
-                      data.directorsList.map((o, i) =>
-                        i === idx ? { ...o, nationality: v } : o,
-                      ),
-                    )
-                  }
-                />
-                <div className="space-y-1.5">
-                  <Label className="text-xs">PEP Status *</Label>
-                  <Select
-                    value={dir.pepStatus}
-                    onValueChange={(v) =>
-                      setDirList(
-                        data.directorsList.map((o, i) =>
-                          i === idx ? { ...o, pepStatus: v } : o,
-                        ),
-                      )
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select PEP status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PEP_STATUS.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="sm:col-span-2">
-                  <Field
-                    label="Residential Address *"
-                    value={dir.residentialAddress}
-                    onChange={(v) =>
-                      setDirList(
-                        data.directorsList.map((o, i) =>
-                          i === idx ? { ...o, residentialAddress: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              setDirList([...data.directorsList, { ...emptyDirector }])
-            }
-          >
-            <Plus className="h-4 w-4 mr-1" /> Add Director / Officer
-          </Button>
-        </div>
-      </section>
-
-      <Separator />
-
-      {/* Related Entities */}
-      <section className="space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold">
-            Related Entities Declaration
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Please disclose all entities where any shareholder of the applicant
-            entity owns 20% or more, or exercises significant control. This
-            includes subsidiaries, affiliates, parent companies, and any other
-            related entities.
-          </p>
-        </div>
-
-        <div>
-          <Label className="text-sm">
-            Does any individual own 20% or more of the entity?
-          </Label>
-          <div className="flex gap-3 mt-2">
-            <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer">
-              <Checkbox
-                checked={data.hasRelatedEntity === "yes"}
-                onCheckedChange={() => handleHasRel("yes")}
-              />
-              Yes
-            </Label>
-            <Label className="flex items-center gap-2 border rounded-md px-4 py-2 cursor-pointer">
-              <Checkbox
-                checked={data.hasRelatedEntity === "no"}
-                onCheckedChange={() => handleHasRel("no")}
-              />
-              No
-            </Label>
-          </div>
-        </div>
-
-        {data.hasRelatedEntity === "yes" && (
-          <div className="space-y-4">
-            {data.relatedEntitiesList.map((ent, idx) => (
-              <div
-                key={idx}
-                className="rounded-lg border p-4 space-y-3 bg-muted/20"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">
-                    Related Entity #{idx + 1}
-                  </p>
-                  {data.relatedEntitiesList.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setRelList(
-                          data.relatedEntitiesList.filter((_, i) => i !== idx),
-                        )
-                      }
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Field
-                    label="Related Entity Name *"
-                    value={ent.entityName}
-                    onChange={(v) =>
-                      setRelList(
-                        data.relatedEntitiesList.map((o, i) =>
-                          i === idx ? { ...o, entityName: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <Field
-                    label="Registration Number *"
-                    value={ent.registrationNumber}
-                    onChange={(v) =>
-                      setRelList(
-                        data.relatedEntitiesList.map((o, i) =>
-                          i === idx ? { ...o, registrationNumber: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <Field
-                    label="Jurisdiction of Incorporation *"
-                    value={ent.jurisdiction}
-                    onChange={(v) =>
-                      setRelList(
-                        data.relatedEntitiesList.map((o, i) =>
-                          i === idx ? { ...o, jurisdiction: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <Field
-                    label="Business Activity *"
-                    value={ent.businessActivity}
-                    onChange={(v) =>
-                      setRelList(
-                        data.relatedEntitiesList.map((o, i) =>
-                          i === idx ? { ...o, businessActivity: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <Field
-                    label="Name of Shareholder *"
-                    value={ent.shareholderName}
-                    onChange={(v) =>
-                      setRelList(
-                        data.relatedEntitiesList.map((o, i) =>
-                          i === idx ? { ...o, shareholderName: v } : o,
-                        ),
-                      )
-                    }
-                  />
-                  <Field
-                    label="Ownership Percentage *"
-                    value={ent.ownershipPercentage}
-                    onChange={(v) =>
-                      setRelList(
-                        data.relatedEntitiesList.map((o, i) =>
-                          i === idx ? { ...o, ownershipPercentage: v } : o,
-                        ),
-                      )
-                    }
-                    placeholder="e.g. 25%"
-                  />
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <Label className="text-xs">Nature of Relationship *</Label>
-                    <Select
-                      value={ent.natureOfRelationship}
-                      onValueChange={(v) =>
-                        setRelList(
-                          data.relatedEntitiesList.map((o, i) =>
-                            i === idx ? { ...o, natureOfRelationship: v } : o,
-                          ),
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {RELATIONSHIP_TYPES.map((n) => (
-                          <SelectItem key={n} value={n}>
-                            {n}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setRelList([
-                  ...data.relatedEntitiesList,
-                  { ...emptyRelatedEntity },
-                ])
-              }
-            >
-              <Plus className="h-4 w-4 mr-1" /> Add Related Entity
-            </Button>
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-/* ----------------------- Individual: Employment Step ---------------------- */
-
-const EMPLOYMENT_STATUSES = [
-  "Employed",
-  "Self Employed",
-  "Unemployed",
-  "Retired",
-  "Student",
-  "Other",
-];
-
-const NET_WORTH_RANGES = [
-  "Less than $50,000",
-  "$50,000 - $250,000",
-  "$250,000 - $1,000,000",
-  "Over $1,000,000",
-];
-
-const ANNUAL_INCOME_RANGES = [
-  "Less than $25,000",
-  "$25,000 - $75,000",
-  "$75,000 - $150,000",
-  "Over $150,000",
-];
-
-const PRIMARY_SOURCE_OF_FUNDS_OPTIONS = [
-  "Employment Income",
-  "Business Income",
-  "Savings",
-  "Investments",
-  "Inheritance",
-  "Gift",
-  "Other",
-];
-
-function EmploymentStep({
-  data,
-  update,
-}: {
-  data: KycData;
-  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Employment Status *</Label>
-          <Select
-            value={data.employmentStatus}
-            onValueChange={(v) => update("employmentStatus", v)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {EMPLOYMENT_STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <Field
-          label="Employer Name"
-          value={data.employer}
-          onChange={(v) => update("employer", v)}
-        />
-        <Field
-          label="Occupation / Job Title"
-          value={data.occupation}
-          onChange={(v) => update("occupation", v)}
-        />
-        <Field
-          label="Industry Sector"
-          value={data.industrySector}
-          onChange={(v) => update("industrySector", v)}
-        />
-        <div className="sm:col-span-2">
-          <Field
-            label="Employer Address"
-            value={data.employerAddress}
-            onChange={(v) => update("employerAddress", v)}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ----------------------- Individual: Source of Wealth --------------------- */
-
-function WealthStep({
-  data,
-  update,
-  toggleArray,
-}: {
-  data: KycData;
-  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
-  toggleArray: (
-    key: "sourceOfFunds" | "highRiskIndicators" | "primarySourceOfFunds",
-    value: string,
-  ) => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <Label className="mb-2 block">Primary Source of Funds *</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {PRIMARY_SOURCE_OF_FUNDS_OPTIONS.map((opt) => (
-            <Label
-              key={opt}
-              className="flex items-center gap-2 border rounded-md p-2.5 cursor-pointer hover:border-primary/40"
-            >
-              <Checkbox
-                checked={data.primarySourceOfFunds.includes(opt)}
-                onCheckedChange={() => toggleArray("primarySourceOfFunds", opt)}
-              />
-              <span className="text-sm">{opt}</span>
-            </Label>
-          ))}
-        </div>
-        {data.primarySourceOfFunds.includes("Other") && (
-          <div className="mt-3">
-            <Field
-              label="Please specify"
-              value={data.primarySourceOfFundsOther}
-              onChange={(v) => update("primarySourceOfFundsOther", v)}
-            />
-          </div>
-        )}
-      </div>
-      <div>
-        <Label className="text-xs">Source of Wealth *</Label>
-        <Textarea
-          rows={3}
-          className="mt-1.5"
-          placeholder="Describe how your overall wealth was accumulated"
-          value={data.sourceOfWealth}
-          onChange={(e) => update("sourceOfWealth", e.target.value)}
-        />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Estimated Net Worth *</Label>
-          <Select
-            value={data.netWorth}
-            onValueChange={(v) => update("netWorth", v)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select range" />
-            </SelectTrigger>
-            <SelectContent>
-              {NET_WORTH_RANGES.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {r}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Annual Income Range *</Label>
-          <Select
-            value={data.annualIncome}
-            onValueChange={(v) => update("annualIncome", v)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select range" />
-            </SelectTrigger>
-            <SelectContent>
-              {ANNUAL_INCOME_RANGES.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {r}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ----------------------- Individual: Declaration -------------------------- */
-
-function IndividualDeclaration({
-  data,
-  update,
-}: {
-  data: KycData;
-  update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
-        <p className="font-semibold">Personal Declaration</p>
-        <p>I hereby declare and confirm that:</p>
-        <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-          <li>
-            All information I have provided in this form is true, accurate
-            and complete to the best of my knowledge.
-          </li>
-          <li>
-            I understand that providing false, misleading or incomplete
-            information may result in the refusal of services, termination of
-            the relationship and possible legal action.
-          </li>
-          <li>
-            I will promptly notify you of any material change to the
-            information provided (e.g. address, employment, source of funds,
-            tax residency, identification documents).
-          </li>
-          <li>
-            The funds and assets I have or will deposit are derived from
-            legitimate sources and are not the proceeds of any criminal
-            activity.
-          </li>
-          <li>
-            I am not acting on behalf of any undisclosed third party.
-          </li>
-        </ul>
-      </div>
-      <div className="space-y-3">
-        <Label className="flex items-start gap-3 cursor-pointer">
-          <Checkbox
-            checked={data.agreeTrue}
-            onCheckedChange={(v) => update("agreeTrue", !!v)}
-            className="mt-0.5"
-          />
-          <span className="text-sm">
-            I consent to the collection, processing and storage of my personal
-            data for KYC, AML and regulatory compliance purposes.
-          </span>
-        </Label>
-        <Label className="flex items-start gap-3 cursor-pointer">
-          <Checkbox
-            checked={data.agreeUpdate}
-            onCheckedChange={(v) => update("agreeUpdate", !!v)}
-            className="mt-0.5"
-          />
-          <span className="text-sm">
-            I authorize verification of my identity against sanctions, PEP and
-            other compliance databases.
-          </span>
-        </Label>
-        <Label className="flex items-start gap-3 cursor-pointer">
-          <Checkbox
-            checked={data.agreeConsent}
-            onCheckedChange={(v) => update("agreeConsent", !!v)}
-            className="mt-0.5"
-          />
-          <span className="text-sm">
-            I acknowledge my rights to access, correct and request deletion of
-            my personal data in accordance with applicable data protection
-            laws.
-          </span>
-        </Label>
-      </div>
-      <Separator />
-      <div>
-        <h3 className="text-sm font-semibold mb-3">Signature</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <Field
-              label="Full Name *"
-              value={data.signatoryFullName}
-              onChange={(v) => update("signatoryFullName", v)}
-            />
-          </div>
-          <Field
-            label="Signature (type full name) *"
-            value={data.signature}
-            onChange={(v) => update("signature", v)}
-          />
-          <Field
-            label="Date *"
-            type="date"
-            value={data.signatureDate}
-            onChange={(v) => update("signatureDate", v)}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-=======
->>>>>>> 6ebfb4b (Update KYC onboarding page)

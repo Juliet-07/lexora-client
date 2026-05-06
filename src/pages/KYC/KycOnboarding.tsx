@@ -736,52 +736,7 @@ function DetailsStep({ classification, data, update }: StepProps) {
   }
 
   if (classification === "corporate") {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field
-          label="Legal Entity Name *"
-          value={data.legalEntityName}
-          onChange={(v) => update("legalEntityName", v)}
-        />
-        <Field
-          label="Trading / Commercial Name"
-          value={data.tradingName}
-          onChange={(v) => update("tradingName", v)}
-        />
-        <Field
-          label="Registration Number *"
-          value={data.registrationNumber}
-          onChange={(v) => update("registrationNumber", v)}
-        />
-        <Field
-          label="Country of Incorporation *"
-          value={data.incorporationCountry}
-          onChange={(v) => update("incorporationCountry", v)}
-        />
-        <Field
-          label="Date of Incorporation *"
-          type="date"
-          value={data.incorporationDate}
-          onChange={(v) => update("incorporationDate", v)}
-        />
-        <Field
-          label="Business Type / Industry *"
-          value={data.businessType}
-          onChange={(v) => update("businessType", v)}
-        />
-        <Field
-          label="Tax ID *"
-          value={data.taxId}
-          onChange={(v) => update("taxId", v)}
-        />
-        <Field
-          label="Company Website"
-          value={data.website}
-          onChange={(v) => update("website", v)}
-          placeholder="https://"
-        />
-      </div>
-    );
+    return <CorporateDetailsStep data={data} update={update} />;
   }
 
   if (classification === "partnership") {

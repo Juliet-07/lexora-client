@@ -474,7 +474,7 @@ export default function KycOnboarding() {
                         <Checkbox
                           checked={data.transactionData.includes(opt)}
                           onCheckedChange={() =>
-                            toggleArray("sourceOfFunds", opt)
+                            toggleArray("transactionData", opt)
                           }
                         />
                         <span className="text-sm">{opt}</span>

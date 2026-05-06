@@ -151,7 +151,11 @@ export default function KycOnboarding() {
   };
 
   const toggleArray = (
-    key: "sourceOfFunds" | "highRiskIndicators" | "transactionData" | "primarySourceOfFunds",
+    key:
+      | "sourceOfFunds"
+      | "highRiskIndicators"
+      | "transactionData"
+      | "primarySourceOfFunds",
     value: string,
   ) => {
     setData((d) => {
@@ -1127,7 +1131,11 @@ function WealthStep({
   data: KycData;
   update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
   toggleArray: (
-    key: "primarySourceOfFunds" | "sourceOfFunds" | "highRiskIndicators" | "transactionData",
+    key:
+      | "primarySourceOfFunds"
+      | "sourceOfFunds"
+      | "highRiskIndicators"
+      | "transactionData",
     value: string,
   ) => void;
 }) {
@@ -1144,9 +1152,7 @@ function WealthStep({
             >
               <Checkbox
                 checked={data.primarySourceOfFunds.includes(opt)}
-                onCheckedChange={() =>
-                  toggleArray("primarySourceOfFunds", opt)
-                }
+                onCheckedChange={() => toggleArray("primarySourceOfFunds", opt)}
               />
               <span className="text-sm">{opt}</span>
             </Label>
@@ -1216,11 +1222,7 @@ function WealthStep({
 
 /* --------------------- Declaration Step --------------------- */
 
-function DeclarationStep({
-  classification,
-  data,
-  update,
-}: StepProps) {
+function DeclarationStep({ classification, data, update }: StepProps) {
   const isIndividual = classification === "individual";
   return (
     <div className="space-y-5">
@@ -1235,9 +1237,9 @@ function DeclarationStep({
                 complete to the best of my knowledge.
               </li>
               <li>
-                I understand that providing false or misleading information is
-                a serious offense and may lead to the rejection of my
-                application or termination of the relationship.
+                I understand that providing false or misleading information is a
+                serious offense and may lead to the rejection of my application
+                or termination of the relationship.
               </li>
               <li>
                 I will notify the institution within 30 days of any material
@@ -1264,16 +1266,16 @@ function DeclarationStep({
                 best of our knowledge.
               </li>
               <li>
-                We understand that providing false or misleading information is
-                a serious offense and may result in legal consequences.
+                I/We understand that providing false or misleading information
+                is a serious offense and may result in legal consequences.
               </li>
               <li>
-                We will notify the institution immediately of any material
+                I/We will notify the institution immediately of any material
                 changes to the information provided.
               </li>
               <li>
-                We authorize the institution to verify the information provided
-                through appropriate channels.
+                I/We authorize the institution to verify the information
+                provided through appropriate channels.
               </li>
             </ul>
           </>
@@ -1290,7 +1292,7 @@ function DeclarationStep({
           <span className="text-sm">
             {isIndividual
               ? "I confirm that all information provided is true and accurate."
-              : "I/We confirm that all information provided is true and accurate."}
+              : "I/We consent to the collection, processing, and storage of personal data for compliance and regulatory purposes."}
           </span>
         </Label>
         <Label className="flex items-start gap-3 cursor-pointer">
@@ -1302,7 +1304,7 @@ function DeclarationStep({
           <span className="text-sm">
             {isIndividual
               ? "I agree to notify the institution of any material changes within 30 days."
-              : "I/We agree to notify the institution of any material changes within 30 days."}
+              : "I/We consent to verification checks against sanctions lists, PEP databases, and other compliance databases."}
           </span>
         </Label>
         <Label className="flex items-start gap-3 cursor-pointer">
@@ -1314,7 +1316,7 @@ function DeclarationStep({
           <span className="text-sm">
             {isIndividual
               ? "I consent to the processing of my personal data for KYC/AML compliance purposes."
-              : "I/We consent to the processing of personal data for KYC/AML compliance purposes."}
+              : "I/We understand that ongoing transaction monitoring will be conducted as part of regulatory requirements."}
           </span>
         </Label>
       </div>
@@ -1427,7 +1429,9 @@ function CorporateDetailsStep({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-semibold mb-3">Section A — Entity Details</h3>
+        <h3 className="text-sm font-semibold mb-3">
+          Section A — Entity Details
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field
             label="Legal Entity Name *"
@@ -1472,7 +1476,9 @@ function CorporateDetailsStep({
       <Separator />
 
       <div>
-        <h3 className="text-sm font-semibold mb-3">Registered Business Address</h3>
+        <h3 className="text-sm font-semibold mb-3">
+          Registered Business Address
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <Field
@@ -1507,7 +1513,9 @@ function CorporateDetailsStep({
       <Separator />
 
       <div>
-        <h3 className="text-sm font-semibold mb-3">Business Activity Information</h3>
+        <h3 className="text-sm font-semibold mb-3">
+          Business Activity Information
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <Field
@@ -1657,7 +1665,9 @@ function CorporateOwnershipStep({
     <div className="space-y-8">
       {/* Beneficial Ownership */}
       <section className="space-y-3">
-        <h3 className="text-sm font-semibold">Beneficial Ownership Structure</h3>
+        <h3 className="text-sm font-semibold">
+          Beneficial Ownership Structure
+        </h3>
         <p className="text-xs text-muted-foreground">
           A beneficial owner is any individual who ultimately owns or controls
           25% or more of the entity, or on whose behalf a transaction is being
@@ -1719,9 +1729,7 @@ function CorporateOwnershipStep({
                   <Field
                     label="Ownership Percentage *"
                     value={owner.ownershipPercentage}
-                    onChange={(v) =>
-                      updateOwner(i, { ownershipPercentage: v })
-                    }
+                    onChange={(v) => updateOwner(i, { ownershipPercentage: v })}
                     placeholder="e.g. 30%"
                   />
                   <SelectField
@@ -1749,7 +1757,9 @@ function CorporateOwnershipStep({
 
       {/* Directors & Officers */}
       <section className="space-y-3">
-        <h3 className="text-sm font-semibold">Directors & Officers Information</h3>
+        <h3 className="text-sm font-semibold">
+          Directors & Officers Information
+        </h3>
         <p className="text-xs text-muted-foreground">
           List all directors, officers and authorized signatories of the entity.
         </p>
@@ -1872,16 +1882,12 @@ function CorporateOwnershipStep({
                   <Field
                     label="Business Activity *"
                     value={r.businessActivity}
-                    onChange={(v) =>
-                      updateRelated(i, { businessActivity: v })
-                    }
+                    onChange={(v) => updateRelated(i, { businessActivity: v })}
                   />
                   <Field
                     label="Name of Shareholder *"
                     value={r.shareholderName}
-                    onChange={(v) =>
-                      updateRelated(i, { shareholderName: v })
-                    }
+                    onChange={(v) => updateRelated(i, { shareholderName: v })}
                   />
                   <Field
                     label="Ownership Percentage *"

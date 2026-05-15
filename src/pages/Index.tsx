@@ -14,11 +14,28 @@ import {
   CheckCircle2,
   Upload,
 } from "lucide-react";
+import { api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 const projects = [
-  { name: "Tax Filing 2024", status: "In Progress", progress: 65, dueDate: "Apr 30, 2026" },
-  { name: "Company Registration", status: "Pending Review", progress: 90, dueDate: "Apr 15, 2026" },
-  { name: "Annual Compliance", status: "Not Started", progress: 0, dueDate: "Jun 30, 2026" },
+  {
+    name: "Tax Filing 2024",
+    status: "In Progress",
+    progress: 65,
+    dueDate: "Apr 30, 2026",
+  },
+  {
+    name: "Company Registration",
+    status: "Pending Review",
+    progress: 90,
+    dueDate: "Apr 15, 2026",
+  },
+  {
+    name: "Annual Compliance",
+    status: "Not Started",
+    progress: 0,
+    dueDate: "Jun 30, 2026",
+  },
 ];
 
 const pendingActions = [
@@ -29,9 +46,24 @@ const pendingActions = [
 ];
 
 const recentMessages = [
-  { from: "Sarah K.", message: "Your tax filing documents are ready for review", time: "2h ago", unread: true },
-  { from: "Admin", message: "New compliance deadline reminder", time: "5h ago", unread: false },
-  { from: "Finance Dept.", message: "Invoice #1041 has been processed", time: "1d ago", unread: false },
+  {
+    from: "Sarah K.",
+    message: "Your tax filing documents are ready for review",
+    time: "2h ago",
+    unread: true,
+  },
+  {
+    from: "Admin",
+    message: "New compliance deadline reminder",
+    time: "5h ago",
+    unread: false,
+  },
+  {
+    from: "Finance Dept.",
+    message: "Invoice #1041 has been processed",
+    time: "1d ago",
+    unread: false,
+  },
 ];
 
 const statusStyles: Record<string, string> = {
@@ -41,15 +73,45 @@ const statusStyles: Record<string, string> = {
 };
 
 export default function Index() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["superadmin-dashboard"],
+    queryFn: async () => {
+      const res = await api.get("/client/dashboard");
+      console.log(res.data);
+      return res.data?.data ?? res.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
   return (
-    <PortalLayout title="Dashboard" subtitle="Overview of your projects and tasks">
+    <PortalLayout
+      title="Dashboard"
+      subtitle="Overview of your projects and tasks"
+    >
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <StatCard title="Active Projects" value="3" subtitle="2 in progress" icon={FolderOpen} variant="primary" />
-          <StatCard title="Pending Actions" value="4" subtitle="2 urgent" icon={AlertCircle} variant="warning" />
+          <StatCard
+            title="Active Projects"
+            value="3"
+            subtitle="2 in progress"
+            icon={FolderOpen}
+            variant="primary"
+          />
+          <StatCard
+            title="Pending Actions"
+            value="4"
+            subtitle="2 urgent"
+            icon={AlertCircle}
+            variant="warning"
+          />
           {/* <StatCard title="Messages" value="1" subtitle="Unread" icon={MessageSquare} variant="success" /> */}
-          <StatCard title="Documents" value="12" subtitle="3 awaiting signature" icon={FileText} />
+          <StatCard
+            title="Documents"
+            value="12"
+            subtitle="3 awaiting signature"
+            icon={FileText}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -57,24 +119,40 @@ export default function Index() {
           <Card className="lg:col-span-2 animate-fade-in">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-heading">Active Projects</CardTitle>
-                <Button variant="ghost" size="sm" className="text-primary text-xs">
+                <CardTitle className="text-base font-heading">
+                  Active Projects
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary text-xs"
+                >
                   View All <ArrowRight className="h-3 w-3 ml-1" />
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {projects.map((project) => (
-                <div key={project.name} className="p-4 rounded-lg border bg-card hover:shadow-sm transition-shadow">
+                <div
+                  key={project.name}
+                  className="p-4 rounded-lg border bg-card hover:shadow-sm transition-shadow"
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="font-medium text-sm text-foreground">{project.name}</p>
+                      <p className="font-medium text-sm text-foreground">
+                        {project.name}
+                      </p>
                       <div className="flex items-center gap-2 mt-1">
                         <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Due {project.dueDate}</span>
+                        <span className="text-xs text-muted-foreground">
+                          Due {project.dueDate}
+                        </span>
                       </div>
                     </div>
-                    <Badge variant="outline" className={statusStyles[project.status]}>
+                    <Badge
+                      variant="outline"
+                      className={statusStyles[project.status]}
+                    >
                       {project.status}
                     </Badge>
                   </div>
@@ -93,7 +171,9 @@ export default function Index() {
           {/* Pending Actions */}
           <Card className="animate-fade-in">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-heading">Pending Actions</CardTitle>
+              <CardTitle className="text-base font-heading">
+                Pending Actions
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {pendingActions.map((action) => (
@@ -101,20 +181,35 @@ export default function Index() {
                   key={action.title}
                   className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer group"
                 >
-                  <div className={`h-8 w-8 rounded-md flex items-center justify-center shrink-0 ${action.type === "document" ? "bg-primary/10 text-primary" :
-                    action.type === "signature" ? "bg-secondary/10 text-secondary" :
-                      action.type === "form" ? "bg-info/10 text-info" :
-                        "bg-warning/10 text-warning"
-                    }`}>
-                    {action.type === "document" ? <Upload className="h-4 w-4" /> :
-                      action.type === "signature" ? <FileText className="h-4 w-4" /> :
-                        action.type === "form" ? <CheckCircle2 className="h-4 w-4" /> :
-                          <AlertCircle className="h-4 w-4" />}
+                  <div
+                    className={`h-8 w-8 rounded-md flex items-center justify-center shrink-0 ${
+                      action.type === "document"
+                        ? "bg-primary/10 text-primary"
+                        : action.type === "signature"
+                          ? "bg-secondary/10 text-secondary"
+                          : action.type === "form"
+                            ? "bg-info/10 text-info"
+                            : "bg-warning/10 text-warning"
+                    }`}
+                  >
+                    {action.type === "document" ? (
+                      <Upload className="h-4 w-4" />
+                    ) : action.type === "signature" ? (
+                      <FileText className="h-4 w-4" />
+                    ) : action.type === "form" ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{action.title}</p>
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {action.title}
+                    </p>
                     {action.urgent && (
-                      <p className="text-[10px] text-destructive font-medium uppercase">Urgent</p>
+                      <p className="text-[10px] text-destructive font-medium uppercase">
+                        Urgent
+                      </p>
                     )}
                   </div>
                   <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -1,4 +1,5 @@
 import { http } from "@/lib/api";
+import { api } from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -24,6 +25,15 @@ export interface DocumentAttachment {
   size?: number;
   description?: string;
   uploadedAt: string;
+}
+
+export interface UploadResult {
+  success: boolean;
+  fileUrl: string;
+  originalName: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
 }
 
 export interface SavePayload {
@@ -55,10 +65,31 @@ export const saveDraft = (payload: SavePayload) =>
 export const submitOnboarding = (payload: SubmitPayload) =>
   http.post<OnboardingRecord>("/client/onboarding/submit", payload);
 
-/** Attach a document (Azure Blob URL) */
+/**
+ * Step 1 — Upload file to server storage.
+ * Uses multipart/form-data. The interceptor handles auth token automatically.
+ * Returns a URL pointing to the file on the server.
+ */
+export const uploadDocument = async (file: File): Promise<UploadResult> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  // Use the raw api instance here (not http wrapper) because
+  // we need multipart/form-data, not JSON
+  const res = await api.post("/client/onboarding/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return res.data;
+};
+
+/**
+ * Step 2 — Attach the uploaded file URL to the onboarding record.
+ * Call this right after uploadDocument() succeeds.
+ */
 export const addDocument = (doc: Omit<DocumentAttachment, "uploadedAt">) =>
   http.post<OnboardingRecord>("/client/onboarding/documents", doc);
 
-/** Remove a document by URL */
+/** Remove a document from the onboarding record by URL */
 export const removeDocument = (url: string) =>
   http.delete<OnboardingRecord>("/client/onboarding/documents", { url });

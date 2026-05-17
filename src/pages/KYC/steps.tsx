@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +20,10 @@ import {
   User,
   Handshake,
   Landmark,
+  UploadCloud,
+  Loader2,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import {
   KycData,
@@ -31,6 +35,7 @@ import {
   type RelatedEntity,
 } from "./data";
 import type { ClientClassification } from "@/lib/profile";
+import { DocumentAttachment, uploadDocument } from "./onboardingApi";
 
 // ─────────────────────────────────────────────────────────────
 // SHARED TYPES
@@ -40,6 +45,9 @@ export type StepProps = {
   classification: ClientClassification;
   data: KycData;
   update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
+  onUpload?: (doc: Omit<DocumentAttachment, "uploadedAt">) => Promise<void>;
+  onRemoveDoc?: (url: string) => Promise<void>;
+  existingDocs?: DocumentAttachment[];
 };
 
 type ToggleKey =
@@ -50,6 +58,62 @@ type ToggleKey =
 
 // ─────────────────────────────────────────────────────────────
 // SHARED UI PRIMITIVES
+// ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// REQUIRED DOCS per classification — used for submit validation
+// ─────────────────────────────────────────────────────────────
+
+const REQUIRED_DOCS: Record<ClientClassification, string[]> = {
+  individual: ["Passport / National ID *", "Proof of Address *"],
+  corporate: [
+    "Certificate of Incorporation *",
+    "Register of Directors & Shareholders *",
+    "Proof of Business Address *",
+  ],
+  partnership: [
+    "Partnership Agreement / Deed *",
+    "Register of Partners *",
+    "Proof of Business Address *",
+    "Authorized Representative ID *",
+  ],
+  trust: [
+    "Trust Deed *",
+    "Settlor ID *",
+    "Trustee IDs *",
+    "Proof of Trust Address *",
+  ],
+};
+
+const DOC_CATEGORY: Record<string, string> = {
+  "Passport / National ID *": "identity",
+  "Proof of Address *": "address_proof",
+  "Certificate of Incorporation *": "corporate_doc",
+  "Register of Directors & Shareholders *": "corporate_doc",
+  "Proof of Business Address *": "address_proof",
+  "Partnership Agreement / Deed *": "corporate_doc",
+  "Certificate of Registration": "corporate_doc",
+  "Register of Partners *": "corporate_doc",
+  "Authorized Representative ID *": "identity",
+  "Trust Deed *": "corporate_doc",
+  "Letter of Wishes (if any)": "corporate_doc",
+  "Settlor ID *": "identity",
+  "Trustee IDs *": "identity",
+  "Proof of Trust Address *": "address_proof",
+};
+
+// Exported — used in KycOnboarding.tsx to gate the submit button
+export function allRequiredDocsUploaded(
+  classification: ClientClassification,
+  existingDocs: DocumentAttachment[],
+): boolean {
+  const required = REQUIRED_DOCS[classification] ?? [];
+  const uploadedNames = new Set(existingDocs.map((d) => d.name));
+  return required.every((r) => uploadedNames.has(r));
+}
+
+// ─────────────────────────────────────────────────────────────
+// SHARED PRIMITIVES
 // ─────────────────────────────────────────────────────────────
 
 export function Field({
@@ -74,15 +138,6 @@ export function Field({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
-    </div>
-  );
-}
-
-export function FileField({ label }: { label: string }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
-      <Input type="file" />
     </div>
   );
 }
@@ -177,6 +232,118 @@ export function RepeaterCard({
 }
 
 // ─────────────────────────────────────────────────────────────
+// FILE FIELD — uploads to server, shows status
+// ─────────────────────────────────────────────────────────────
+
+export function FileField({
+  label,
+  category,
+  onUploaded,
+  onRemoved,
+  existingUrl,
+}: {
+  label: string;
+  category: string;
+  onUploaded: (doc: Omit<DocumentAttachment, "uploadedAt">) => Promise<void>;
+  onRemoved?: (url: string) => Promise<void>;
+  existingUrl?: string;
+}) {
+  const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">(
+    existingUrl ? "done" : "idle",
+  );
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(
+    existingUrl ?? null,
+  );
+  const [errorMsg, setErrorMsg] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStatus("uploading");
+    setErrorMsg("");
+    try {
+      const result = await uploadDocument(file);
+      setUploadedUrl(result.fileUrl);
+      setStatus("done");
+      await onUploaded({
+        name: label,
+        category,
+        url: result.fileUrl,
+        mimeType: result.mimeType,
+        size: result.size,
+      });
+    } catch (err: any) {
+      setStatus("error");
+      setErrorMsg(
+        err?.response?.data?.message ?? "Upload failed. Please try again.",
+      );
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const handleRemove = async () => {
+    if (uploadedUrl && onRemoved) await onRemoved(uploadedUrl);
+    setUploadedUrl(null);
+    setStatus("idle");
+    setErrorMsg("");
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{label}</Label>
+      {status === "done" && uploadedUrl ? (
+        <div className="flex items-center gap-2 p-2.5 rounded-lg border bg-success/5 border-success/20">
+          <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+          <a
+            href={uploadedUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-success truncate flex-1 hover:underline"
+          >
+            {uploadedUrl.split("/").pop()}
+          </a>
+          {onRemoved && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="text-muted-foreground hover:text-destructive shrink-0"
+            >
+              <XCircle className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="relative">
+          <Input
+            ref={inputRef}
+            type="file"
+            onChange={handleChange}
+            disabled={status === "uploading"}
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            className="cursor-pointer file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+          />
+          {status === "uploading" && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      )}
+      {status === "uploading" && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <UploadCloud className="h-3 w-3" /> Uploading…
+        </p>
+      )}
+      {status === "error" && (
+        <p className="text-xs text-destructive">{errorMsg}</p>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // STEP: DETAILS
 // Handles individual, corporate, partnership, trust
 // ─────────────────────────────────────────────────────────────
@@ -255,7 +422,7 @@ export function DetailsStep({ classification, data, update }: StepProps) {
           </div>
         </div>
         <Separator />
-        {/* <div>
+        <div>
           <h3 className="text-sm font-semibold mb-3">Contact Information</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field
@@ -277,7 +444,7 @@ export function DetailsStep({ classification, data, update }: StepProps) {
               />
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
     );
   }
@@ -565,12 +732,50 @@ export function WealthStep({
 // ─────────────────────────────────────────────────────────────
 // STEP: IDENTIFICATION
 // ─────────────────────────────────────────────────────────────
+const ALL_DOCS: Record<
+  ClientClassification,
+  { label: string; required: boolean }[]
+> = {
+  individual: [
+    { label: "Passport / National ID *", required: true },
+    { label: "Proof of Address *", required: true },
+  ],
+  corporate: [
+    { label: "Certificate of Incorporation *", required: true },
+    { label: "Register of Directors & Shareholders *", required: true },
+    { label: "Proof of Business Address *", required: true },
+  ],
+  partnership: [
+    { label: "Partnership Agreement / Deed *", required: true },
+    { label: "Certificate of Registration", required: false },
+    { label: "Register of Partners *", required: true },
+    { label: "Proof of Business Address *", required: true },
+    { label: "Authorized Representative ID *", required: true },
+  ],
+  trust: [
+    { label: "Trust Deed *", required: true },
+    { label: "Letter of Wishes (if any)", required: false },
+    { label: "Settlor ID *", required: true },
+    { label: "Trustee IDs *", required: true },
+    { label: "Proof of Trust Address *", required: true },
+  ],
+};
 
 export function IdentificationStep({
   classification,
   data,
   update,
+  onUpload,
+  onRemoveDoc,
+  existingDocs = [],
 }: StepProps) {
+  const existingUrl = (label: string) =>
+    existingDocs.find((d) => d.name === label)?.url;
+  const requiredDocs = REQUIRED_DOCS[classification] ?? [];
+  const uploadedNames = new Set(existingDocs.map((d) => d.name));
+  const missingCount = requiredDocs.filter((r) => !uploadedNames.has(r)).length;
+  const docs = ALL_DOCS[classification] ?? [];
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -605,49 +810,35 @@ export function IdentificationStep({
       <Separator />
 
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold">Upload Supporting Documents</h3>
-        {/* <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-          <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm font-medium">
-            Drop files here or click to upload
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            PDF, JPG, PNG up to 5MB each
-          </p>
-        </div> */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Upload Supporting Documents</h3>
+          {missingCount > 0 ? (
+            <span className="text-xs text-destructive font-medium">
+              {missingCount} required document{missingCount > 1 ? "s" : ""}{" "}
+              missing
+            </span>
+          ) : (
+            <span className="text-xs text-success font-medium flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" /> All required documents
+              uploaded
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Accepted: PDF, JPG, PNG, DOC, DOCX · Max 10MB per file
+        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {classification === "individual" && (
-            <>
-              <FileField label="Passport / National ID *" />
-              <FileField label="Proof of Address *" />
-            </>
-          )}
-          {classification === "corporate" && (
-            <>
-              <FileField label="Certificate of Incorporation / Registration *" />
-              <FileField label="Register of Directors & Shareholders *" />
-              <FileField label="Proof of Business Address *" />
-            </>
-          )}
-          {classification === "partnership" && (
-            <>
-              <FileField label="Partnership Agreement / Deed *" />
-              <FileField label="Certificate of Registration" />
-              <FileField label="Register of Partners *" />
-              <FileField label="Proof of Business Address *" />
-              <FileField label="Authorized Representative ID *" />
-            </>
-          )}
-          {classification === "trust" && (
-            <>
-              <FileField label="Trust Deed *" />
-              <FileField label="Letter of Wishes (if any)" />
-              <FileField label="Settlor ID *" />
-              <FileField label="Trustee IDs *" />
-              <FileField label="Proof of Trust Address *" />
-            </>
-          )}
+          {docs.map(({ label }) => (
+            <FileField
+              key={label}
+              label={label}
+              category={DOC_CATEGORY[label] ?? "other"}
+              onUploaded={onUpload!}
+              onRemoved={onRemoveDoc}
+              existingUrl={existingUrl(label)}
+            />
+          ))}
         </div>
       </div>
     </div>

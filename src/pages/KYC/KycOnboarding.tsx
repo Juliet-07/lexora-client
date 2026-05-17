@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { PortalLayout } from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +32,10 @@ import {
   getOnboarding,
   saveDraft,
   submitOnboarding,
+  addDocument,
+  removeDocument,
   type OnboardingRecord,
+  type DocumentAttachment,
 } from "./onboardingApi";
 import {
   DetailsStep,
@@ -48,7 +45,10 @@ import {
   OwnershipStep,
   AmlStep,
   DeclarationStep,
+  allRequiredDocsUploaded,
 } from "./steps";
+
+// ─────────────────────────────────────────────────────────────
 
 const classificationMeta = {
   individual: {
@@ -112,6 +112,8 @@ function buildSteps(classification: ClientClassification | null) {
   ];
 }
 
+// ─────────────────────────────────────────────────────────────
+
 export default function KycOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -123,30 +125,28 @@ export default function KycOnboarding() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(true);
+  const [sectionCompletion, setSectionCompletion] = useState<
+    Record<string, boolean>
+  >({});
 
-  // ── Derive steps from classification ─────────────────────
+  // ── Documents state — loaded from draft, updated on every upload/remove ──
+  const [existingDocs, setExistingDocs] = useState<DocumentAttachment[]>([]);
+
   const steps = useMemo(() => buildSteps(classification), [classification]);
-
-  // ── Clamp step if steps shrink ────────────────────────────
-  useEffect(() => {
-    if (step > steps.length) setStep(steps.length);
-  }, [steps.length, step]);
-
   const progress = useMemo(
     () => Math.round(((step - 1) / Math.max(1, steps.length - 1)) * 100),
     [step, steps.length],
   );
 
-  // ── Section completion map ────────────────────────────────
-  const [sectionCompletion, setSectionCompletion] = useState<
-    Record<string, boolean>
-  >({});
+  useEffect(() => {
+    if (step > steps.length) setStep(steps.length);
+  }, [steps.length, step]);
 
   const markSectionDone = useCallback((stepId: string) => {
     setSectionCompletion((prev) => ({ ...prev, [stepId]: true }));
   }, []);
 
-  // ── Load classification + draft on mount ──────────────────
+  // ── Load classification + draft ───────────────────────────
   useEffect(() => {
     const p = getProfile();
     setClassification(p.classifications);
@@ -154,20 +154,20 @@ export default function KycOnboarding() {
     getOnboarding()
       .then((record: OnboardingRecord) => {
         if (record.formData && Object.keys(record.formData).length > 0) {
-          // Merge saved fields onto initialData to pre-populate form
           setData((d) => ({ ...d, ...record.formData }));
         }
         if (record.sectionCompletion) {
           setSectionCompletion(record.sectionCompletion);
         }
+        if (record.documents?.length) {
+          setExistingDocs(record.documents); // ← restore uploaded docs on resume
+        }
       })
-      .catch(() => {
-        // Network error or not logged in — form still works with initialData
-      })
+      .catch(() => {})
       .finally(() => setIsLoadingDraft(false));
   }, []);
 
-  // ── Field update helpers (same as original) ───────────────
+  // ── Field helpers ─────────────────────────────────────────
   const update = <K extends keyof KycData>(key: K, value: KycData[K]) => {
     setData((d) => ({ ...d, [key]: value }));
   };
@@ -191,6 +191,29 @@ export default function KycOnboarding() {
     });
   };
 
+  // ── Document handlers ─────────────────────────────────────
+  // Called by FileField after uploading — attaches URL to the onboarding record
+  const handleDocumentUploaded = async (
+    doc: Omit<DocumentAttachment, "uploadedAt">,
+  ) => {
+    try {
+      const updated = await addDocument(doc);
+      setExistingDocs(updated.documents ?? []);
+    } catch {
+      toast({ title: "Failed to attach document", variant: "destructive" });
+      throw new Error("attach failed"); // re-throw so FileField shows error state
+    }
+  };
+
+  const handleDocumentRemoved = async (url: string) => {
+    try {
+      const updated = await removeDocument(url);
+      setExistingDocs(updated.documents ?? []);
+    } catch {
+      toast({ title: "Failed to remove document", variant: "destructive" });
+    }
+  };
+
   // ── Save draft ────────────────────────────────────────────
   const saveDraftFn = async (silent = false) => {
     if (isSaving) return;
@@ -201,34 +224,33 @@ export default function KycOnboarding() {
         sectionCompletion,
         completionPercent: progress,
       });
-      if (!silent) {
+      if (!silent)
         toast({ title: "Draft saved", description: "You can resume anytime." });
-      }
     } catch {
-      if (!silent) {
+      if (!silent)
         toast({
           title: "Save failed",
           description: "Check your connection and try again.",
           variant: "destructive",
         });
-      }
     } finally {
       setIsSaving(false);
     }
   };
 
-  // ── Navigate steps — auto-save on step change ─────────────
+  // ── Step navigation ───────────────────────────────────────
   const goToStep = async (targetStep: number) => {
     markSectionDone(steps[step - 1].id);
-    await saveDraftFn(true); // silent save — no toast on every step
+    await saveDraftFn(true);
     setStep(targetStep);
   };
 
-  const handleBack = () => goToStep(Math.max(1, step - 1));
+  // ── Submit validation ─────────────────────────────────────
+  // Check required docs before allowing submit
+  const docsReady = classification
+    ? allRequiredDocsUploaded(classification, existingDocs)
+    : false;
 
-  const handleNext = () => goToStep(Math.min(steps.length, step + 1));
-
-  // ── Final submit ──────────────────────────────────────────
   const handleSubmit = async () => {
     if (
       !data.agreeTrue ||
@@ -239,6 +261,17 @@ export default function KycOnboarding() {
       toast({
         title: "Missing acknowledgements",
         description: "Please complete all declarations before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Block submit if required documents are missing
+    if (!docsReady) {
+      toast({
+        title: "Documents required",
+        description:
+          "Please upload all required documents in the Identification step before submitting.",
         variant: "destructive",
       });
       return;
@@ -264,15 +297,19 @@ export default function KycOnboarding() {
 
       setTimeout(() => navigate("/dashboard"), 800);
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message || "Submission failed. Please try again.";
-      toast({ title: "Error", description: message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description:
+          err?.response?.data?.message ||
+          "Submission failed. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ── Loading state ─────────────────────────────────────────
+  // ── Loading / no classification ───────────────────────────
   if (isLoadingDraft) {
     return (
       <PortalLayout
@@ -318,6 +355,10 @@ export default function KycOnboarding() {
   const meta = classificationMeta[classification];
   const ClassIcon = meta.icon;
   const currentStepId = steps[step - 1].id;
+  const isLastStep = step === steps.length;
+
+  // On last step: disable submit if docs not ready
+  const submitDisabled = isSubmitting || !docsReady;
 
   return (
     <PortalLayout
@@ -325,7 +366,7 @@ export default function KycOnboarding() {
       subtitle="KYC / AML Compliance Form"
     >
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header / progress card */}
+        {/* Progress card */}
         <Card className="border-0 shadow-md overflow-hidden">
           <div className="gradient-primary p-6 text-primary-foreground">
             <div className="flex items-center gap-3 mb-2">
@@ -427,6 +468,9 @@ export default function KycOnboarding() {
                 classification={classification}
                 data={data}
                 update={update}
+                onUpload={handleDocumentUploaded}
+                onRemoveDoc={handleDocumentRemoved}
+                existingDocs={existingDocs}
               />
             )}
             {currentStepId === "ownership" && (
@@ -440,18 +484,35 @@ export default function KycOnboarding() {
               <AmlStep data={data} update={update} toggleArray={toggleArray} />
             )}
             {currentStepId === "declaration" && (
-              <DeclarationStep
-                classification={classification}
-                data={data}
-                update={update}
-              />
+              <div className="space-y-4">
+                <DeclarationStep
+                  classification={classification}
+                  data={data}
+                  update={update}
+                />
+                {/* Warn if documents are still missing when on declaration step */}
+                {!docsReady && (
+                  <div className="rounded-lg border border-warning/40 bg-warning/5 p-3 text-sm text-warning flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>
+                      Required documents are missing. Go back to the{" "}
+                      <strong>Identification</strong> step and upload all
+                      required files before submitting.
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Footer actions */}
+        {/* Footer */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky bottom-0 bg-background/80 backdrop-blur py-3">
-          <Button variant="ghost" onClick={handleBack} disabled={step === 1}>
+          <Button
+            variant="ghost"
+            onClick={() => goToStep(Math.max(1, step - 1))}
+            disabled={step === 1}
+          >
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           <div className="flex items-center gap-2">
@@ -463,10 +524,10 @@ export default function KycOnboarding() {
               <Save className="h-4 w-4 mr-1" />
               {isSaving ? "Saving…" : "Save Draft"}
             </Button>
-            {step < steps.length ? (
+            {!isLastStep ? (
               <Button
                 className="gradient-primary text-primary-foreground"
-                onClick={handleNext}
+                onClick={() => goToStep(Math.min(steps.length, step + 1))}
                 disabled={isSaving}
               >
                 Save & Continue <ArrowRight className="h-4 w-4 ml-1" />
@@ -475,7 +536,12 @@ export default function KycOnboarding() {
               <Button
                 className="gradient-primary text-primary-foreground"
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={submitDisabled}
+                title={
+                  !docsReady
+                    ? "Upload all required documents before submitting"
+                    : undefined
+                }
               >
                 {isSubmitting ? "Submitting…" : "Submit Onboarding"}
               </Button>

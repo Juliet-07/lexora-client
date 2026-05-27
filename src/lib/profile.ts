@@ -1,7 +1,3 @@
-// Lightweight client-side profile store (frontend-only).
-// Persists the logged-in client's classification and onboarding state
-// so the KYC wizard can render the right form variant.
-
 export type ClientClassification =
   | "individual"
   | "corporate"

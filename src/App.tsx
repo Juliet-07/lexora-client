@@ -22,7 +22,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<EngagementLetter />} />
+          <Route
+            path="/engagement-letter/:token"
+            element={<EngagementLetter />}
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Index />} />
           <Route path="/documents" element={<Documents />} />

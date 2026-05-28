@@ -70,6 +70,7 @@ const REQUIRED_DOCS: Record<ClientClassification, string[]> = {
     "Certificate of Incorporation *",
     "Register of Directors & Shareholders *",
     "Proof of Business Address *",
+    "Passport / National ID *",
   ],
   partnership: [
     "Partnership Agreement / Deed *",
@@ -744,6 +745,7 @@ const ALL_DOCS: Record<
     { label: "Certificate of Incorporation *", required: true },
     { label: "Register of Directors & Shareholders *", required: true },
     { label: "Proof of Business Address *", required: true },
+    { label: "Passport / National ID *", required: true },
   ],
   partnership: [
     { label: "Partnership Agreement / Deed *", required: true },

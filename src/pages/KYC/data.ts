@@ -26,6 +26,7 @@ export interface RelatedEntity {
   shareholderName: string;
   ownershipPercentage: string;
   natureOfRelationship: string;
+  natureOfRelationshipOther: string;
 }
 
 export interface KycData {
@@ -40,6 +41,7 @@ export interface KycData {
   employer: string;
   // Employment details (individual)
   employmentStatus: string;
+  employmentStatusOther: string;
   industrySector: string;
   employerAddress: string;
   // Source of wealth (individual)
@@ -124,7 +126,9 @@ export interface KycData {
   // AML
   purpose: string;
   sourceOfFunds: string[];
+  sourceOfFundsOther: string;
   transactionData: string[];
+  transactionDataOther: string;
   expectedVolume: string;
   expectedValue: string;
   expectedCountries: string;
@@ -169,6 +173,7 @@ export const emptyRelatedEntity: RelatedEntity = {
   shareholderName: "",
   ownershipPercentage: "",
   natureOfRelationship: "",
+  natureOfRelationshipOther: "",
 };
 
 export const initialData: KycData = {
@@ -181,6 +186,7 @@ export const initialData: KycData = {
   occupation: "",
   employer: "",
   employmentStatus: "",
+  employmentStatusOther: "",
   industrySector: "",
   employerAddress: "",
   primarySourceOfFunds: [],
@@ -252,7 +258,9 @@ export const initialData: KycData = {
 
   purpose: "",
   sourceOfFunds: [],
+  sourceOfFundsOther: "",
   transactionData: [],
+  transactionDataOther: "",
   expectedVolume: "",
   expectedValue: "",
   expectedCountries: "",

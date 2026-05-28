@@ -70,6 +70,7 @@ const REQUIRED_DOCS: Record<ClientClassification, string[]> = {
     "Certificate of Incorporation *",
     "Register of Directors & Shareholders *",
     "Proof of Business Address *",
+    "Passport / National ID *",
   ],
   partnership: [
     "Partnership Agreement / Deed *",

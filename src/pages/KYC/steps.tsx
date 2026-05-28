@@ -583,6 +583,13 @@ export function EmploymentStep({
           </SelectContent>
         </Select>
       </div>
+      {data.employmentStatus === "Other" && (
+        <Field
+          label="Please specify employment status *"
+          value={data.employmentStatusOther}
+          onChange={(v) => update("employmentStatusOther", v)}
+        />
+      )}
       <Field
         label="Employer Name"
         value={data.employer}
@@ -978,6 +985,9 @@ export function AmlStep({
   update: <K extends keyof KycData>(key: K, value: KycData[K]) => void;
   toggleArray: (key: ToggleKey, value: string) => void;
 }) {
+  const transactionOther = data.transactionData.includes("Other");
+  const sourceOther = data.sourceOfFunds.includes("Other");
+
   return (
     <div className="space-y-5">
       <div>
@@ -1007,6 +1017,15 @@ export function AmlStep({
             </Label>
           ))}
         </div>
+        {transactionOther && (
+          <div className="mt-3">
+            <Field
+              label="Please specify other transaction pattern *"
+              value={data.transactionDataOther}
+              onChange={(v) => update("transactionDataOther", v)}
+            />
+          </div>
+        )}
       </div>
 
       <div>
@@ -1025,6 +1044,15 @@ export function AmlStep({
             </Label>
           ))}
         </div>
+        {sourceOther && (
+          <div className="mt-3">
+            <Field
+              label="Please specify other source of funds *"
+              value={data.sourceOfFundsOther}
+              onChange={(v) => update("sourceOfFundsOther", v)}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1726,6 +1754,17 @@ function CorporateOwnershipStep({
                       }
                     />
                   </div>
+                  {r.natureOfRelationship === "Other" && (
+                    <div className="sm:col-span-2">
+                      <Field
+                        label="Please specify nature of relationship *"
+                        value={r.natureOfRelationshipOther}
+                        onChange={(v) =>
+                          updateRelated(i, { natureOfRelationshipOther: v })
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               </RepeaterCard>
             ))}

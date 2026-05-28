@@ -745,6 +745,7 @@ const ALL_DOCS: Record<
     { label: "Certificate of Incorporation *", required: true },
     { label: "Register of Directors & Shareholders *", required: true },
     { label: "Proof of Business Address *", required: true },
+    { label: "Passport / National ID *", required: true },
   ],
   partnership: [
     { label: "Partnership Agreement / Deed *", required: true },

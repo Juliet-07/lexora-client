@@ -10,7 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -41,19 +41,30 @@ export function PortalSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("userToken");
+    navigate("/login");
+  };
   return (
     <Sidebar collapsible="icon" className="gradient-sidebar border-r-0">
       <SidebarContent>
         <SidebarGroup>
           <div className="flex items-center gap-3 px-3 py-4 mb-2">
             <div className="h-9 w-9 rounded-lg gradient-primary flex items-center justify-center shrink-0">
-              <span className="text-sm font-bold text-sidebar-primary-foreground">CP</span>
+              <span className="text-sm font-bold text-sidebar-primary-foreground">
+                CP
+              </span>
             </div>
             {!collapsed && (
               <div className="animate-fade-in">
-                <p className="text-sm font-heading font-bold text-sidebar-primary-foreground">Client Portal</p>
-                <p className="text-xs text-sidebar-foreground/60">Welcome back</p>
+                <p className="text-sm font-heading font-bold text-sidebar-primary-foreground">
+                  Client Portal
+                </p>
+                <p className="text-xs text-sidebar-foreground/60">
+                  Welcome back
+                </p>
               </div>
             )}
           </div>
@@ -102,7 +113,10 @@ export function PortalSidebar() {
             </SidebarMenuItem>
           ))}
           <SidebarMenuItem>
-            <SidebarMenuButton className="text-sidebar-foreground/50 hover:text-destructive hover:bg-sidebar-accent transition-all cursor-pointer">
+            <SidebarMenuButton
+              onClick={handleLogout}
+              className="text-sidebar-foreground/50 hover:text-destructive hover:bg-sidebar-accent transition-all cursor-pointer"
+            >
               <LogOut className="h-4 w-4 mr-2 shrink-0" />
               {!collapsed && <span>Logout</span>}
             </SidebarMenuButton>
@@ -114,8 +128,12 @@ export function PortalSidebar() {
               <User className="h-4 w-4 text-sidebar-primary" />
             </div>
             <div className="animate-fade-in">
-              <p className="text-xs font-medium text-sidebar-primary-foreground">John Doe</p>
-              <p className="text-[10px] text-sidebar-foreground/50">john@example.com</p>
+              <p className="text-xs font-medium text-sidebar-primary-foreground">
+                John Doe
+              </p>
+              <p className="text-[10px] text-sidebar-foreground/50">
+                john@example.com
+              </p>
             </div>
           </div>
         )}

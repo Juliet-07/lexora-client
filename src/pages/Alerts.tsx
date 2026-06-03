@@ -131,25 +131,6 @@ export default function Alerts() {
     },
   });
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: AlertStatus }) => {
-      try {
-        await api.patch(`/alerts/${id}`, { status });
-      } catch {
-        // optimistic only
-      }
-      return { id, status };
-    },
-    onSuccess: ({ status }) => {
-      queryClient.setQueryData<ClientAlert[]>(["client-alerts"], (prev) =>
-        (prev ?? []).map((a) =>
-          a.id === arguments_0.id ? { ...a, status } : a,
-        ),
-      );
-    },
-  });
-
-  // Replace mutation logic to avoid `arguments` use
   const setStatus = (id: string, status: AlertStatus) => {
     queryClient.setQueryData<ClientAlert[]>(["client-alerts"], (prev) =>
       (prev ?? []).map((a) => (a.id === id ? { ...a, status } : a)),

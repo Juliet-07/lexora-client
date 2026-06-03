@@ -7,6 +7,7 @@ import {
   Settings,
   User,
   CheckSquare,
+  AlertTriangle,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";

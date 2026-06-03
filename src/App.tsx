@@ -11,6 +11,7 @@ import Payments from "./pages/Payments.tsx";
 import Messages from "./pages/Messages.tsx";
 import KycOnboarding from "./pages/KYC/KycOnboarding.tsx";
 import Notifications from "./pages/Notifications.tsx";
+import Alerts from "./pages/Alerts.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/messages" element={<Messages />} />
           <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/alerts" element={<Alerts />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

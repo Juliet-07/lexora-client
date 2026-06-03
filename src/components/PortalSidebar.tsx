@@ -7,6 +7,7 @@ import {
   Settings,
   User,
   CheckSquare,
+  AlertTriangle,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -32,6 +33,7 @@ const mainItems = [
   { title: "Payments", url: "/payments", icon: CreditCard },
   // { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Onboarding", url: "/onboarding", icon: CheckSquare },
+  { title: "Alerts", url: "/alerts", icon: AlertTriangle },
   { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 

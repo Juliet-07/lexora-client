@@ -77,7 +77,7 @@ export default function Index() {
     queryKey: ["superadmin-dashboard"],
     queryFn: async () => {
       const res = await api.get("/client/dashboard");
-      console.log(res.data);
+      // console.log(res.data);
       return res.data?.data ?? res.data;
     },
     staleTime: 2 * 60 * 1000,

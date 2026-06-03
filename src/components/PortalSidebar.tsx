@@ -23,6 +23,8 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -47,6 +49,16 @@ export function PortalSidebar() {
     localStorage.removeItem("userToken");
     navigate("/login");
   };
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["superadmin-profile"],
+    queryFn: async () => {
+      const res = await api.get("/auth/me");
+      // console.log(res.data);
+      return res.data?.data ?? res.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
   return (
     <Sidebar collapsible="icon" className="gradient-sidebar border-r-0">
       <SidebarContent>
@@ -129,10 +141,10 @@ export function PortalSidebar() {
             </div>
             <div className="animate-fade-in">
               <p className="text-xs font-medium text-sidebar-primary-foreground">
-                John Doe
+                {data?.firstName + " " + data?.lastName}
               </p>
               <p className="text-[10px] text-sidebar-foreground/50">
-                john@example.com
+                {data?.email}
               </p>
             </div>
           </div>

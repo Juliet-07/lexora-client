@@ -11,6 +11,7 @@ import Payments from "./pages/Payments.tsx";
 import Messages from "./pages/Messages.tsx";
 import KycOnboarding from "./pages/KYC/KycOnboarding.tsx";
 import Notifications from "./pages/Notifications.tsx";
+import Alerts from "./pages/Alerts.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();

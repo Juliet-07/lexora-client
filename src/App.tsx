@@ -34,6 +34,7 @@ const App = () => (
           <Route path="/messages" element={<Messages />} />
           <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/alerts" element={<Alerts />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -15,17 +15,12 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const initialValues = {
-    email: "",
-    password: "",
-  };
-
-  const [loginDetails, setLoginDetails] = useState(initialValues);
+  const [loginDetails, setLoginDetails] = useState({ email: "", password: "" });
   const { email, password } = loginDetails;
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setLoginDetails({ ...loginDetails, [name]: value });
   };
@@ -33,16 +28,29 @@ export default function Login() {
   const onSubmit = async () => {
     setIsLoading(true);
     setErrorMessage(null);
-    const url = `${apiURL}/auth/login`;
-    try {
-      const response = await axios.post(url, loginDetails);
-      const payload = response.data.data;
-      const accessToken = payload.tokens.accessToken;
-      localStorage.setItem("userToken", accessToken);
 
+    try {
+      const response = await axios.post(`${apiURL}/auth/login`, loginDetails);
+      const payload = response.data.data;
+      const token = payload.tokens.accessToken;
+      const user = payload.user;
+
+      localStorage.setItem("userToken", token);
+
+      // ── Route based on userType ───────────────────────────
+      // Employee users go straight to /dashboard which renders
+      // EmployeeDashboard via DashboardRouter. They have no
+      // KYC context and no client profile to check.
+      if (user?.userType === "employee") {
+        setIsLoading(false);
+        navigate("/dashboard");
+        return;
+      }
+
+      // ── Client user — existing KYC routing flow ───────────
       const kycStatus: string = payload.kycContext?.kycStatus ?? "not_started";
       const classification: ClientClassification | null =
-        payload.user?.clientProfile?.classifications ?? null;
+        user?.clientProfile?.classifications ?? null;
 
       setProfile({
         classifications: classification,
@@ -55,13 +63,12 @@ export default function Login() {
         navigate(kycStatus === "not_started" ? "/onboarding" : "/dashboard");
       }, 600);
     } catch (error) {
-      console.error("Error in API call:", error);
+      console.error("Login error:", error);
       setErrorMessage("Login failed. Please check your credentials.");
-    } finally {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
       <div className="w-full max-w-md space-y-8">
@@ -84,6 +91,12 @@ export default function Login() {
         <Card className="border-0 shadow-xl">
           <CardContent className="pt-6 pb-8 px-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              {errorMessage && (
+                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3">
+                  {errorMessage}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">

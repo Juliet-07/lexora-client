@@ -35,6 +35,7 @@ const clientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Documents", url: "/documents", icon: FileText },
   { title: "Payments", url: "/payments", icon: CreditCard },
+  { title: "HR", url: "/hr", icon: User },
   { title: "Onboarding", url: "/onboarding", icon: CheckSquare },
   { title: "Alerts", url: "/alerts", icon: AlertTriangle },
   { title: "Notifications", url: "/notifications", icon: Bell },

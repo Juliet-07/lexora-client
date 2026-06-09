@@ -12,6 +12,7 @@ import Messages from "./pages/Messages.tsx";
 import KycOnboarding from "./pages/KYC/KycOnboarding.tsx";
 import Notifications from "./pages/Notifications.tsx";
 import Alerts from "./pages/Alerts.tsx";
+import HR from "./pages/HR.tsx";
 import EmployeeSection from "./pages/EmployeeSection.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/alerts" element={<Alerts />} />
+          <Route path="/hr" element={<HR />} />
           <Route
             path="/employee/profile"
             element={

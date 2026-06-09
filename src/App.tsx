@@ -37,6 +37,7 @@ const App = () => (
           <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/alerts" element={<Alerts />} />
+          <Route path="/hr" element={<HR />} />
           <Route
             path="/employee/profile"
             element={

@@ -42,9 +42,10 @@ const kycClientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Onboarding", url: "/onboarding", icon: CheckSquare },
   { title: "Alerts", url: "/alerts", icon: AlertTriangle },
-  { title: "HR", url: "/hr", icon: User },
+  { title: "HR", url: "/hr", icon: Users },
   { title: "Payments", url: "/payments", icon: CreditCard },
   { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "My Profile", url: "/profile", icon: User },
   // { title: "Documents", url: "/documents", icon: FileText },
 ];
 

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PortalLayout } from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,70 +8,169 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { Upload, Briefcase, GraduationCap, FileCheck2, AlertCircle } from "lucide-react";
+import {
+  Briefcase,
+  GraduationCap,
+  FileCheck2,
+  AlertCircle,
+  Loader2,
+  Upload,
+  User,
+  Phone,
+  MapPin,
+  Shield,
+  Banknote,
+} from "lucide-react";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
 
-interface EmploymentRecord {
-  id: string;
-  role: string;
-  department: string;
+// ─── Types ────────────────────────────────────────────────────
+
+interface EmployeeProfile {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  jobTitle: string;
+  department: string | null;
+  employeeNumber: string;
+  employmentType: string;
+  employmentStatus: string;
   startDate: string;
-  endDate?: string;
-  current?: boolean;
+  probationEndDate: string | null;
+  reportsTo: string | null;
+  nationality: string | null;
+  nationalId: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  address: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+  } | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  taxId: string | null;
+  annualLeaveBalance: number;
+  annualLeaveUsed: number;
+  sickLeaveBalance: number;
+  sickLeaveUsed: number;
+  salary: number | null;
+  salaryCurrency: string;
 }
 
-interface Qualification {
-  id: string;
-  name: string;
-  issuer: string;
-  year: string;
-  fileName?: string;
+interface EditForm {
+  phone: string;
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  bankName: string;
+  bankAccountNumber: string;
+  nationality: string;
 }
 
-const employmentHistory: EmploymentRecord[] = [
-  { id: "1", role: "Senior Analyst", department: "Advisory", startDate: "2024-03-01", current: true },
-  { id: "2", role: "Analyst", department: "Advisory", startDate: "2022-06-01", endDate: "2024-02-29" },
-];
-
-const initialQualifications: Qualification[] = [
-  { id: "1", name: "ACCA", issuer: "ACCA Global", year: "2023", fileName: "acca-cert.pdf" },
-  { id: "2", name: "BSc Accounting", issuer: "University of Lagos", year: "2020", fileName: "degree.pdf" },
-];
+// ─── Component ────────────────────────────────────────────────
 
 export default function MyProfile() {
-  const { data: user } = useCurrentUser();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [qualifications, setQualifications] = useState(initialQualifications);
-  const [form, setForm] = useState({
-    address: "12 Marina Street, Lagos",
-    phone: user?.phone ?? "",
-    emergencyName: "Jane Doe",
-    emergencyPhone: "+234 802 000 0000",
-    bankName: "GTBank",
-    accountNumber: "0123456789",
+  const [form, setForm] = useState<EditForm>({
+    phone: "",
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    bankName: "",
+    bankAccountNumber: "",
+    nationality: "",
   });
 
-  const handleSave = () => {
-    setEditing(false);
-    toast({
-      title: "Profile updated",
-      description: "Bank details changes are pending HR approval.",
-    });
-  };
+  // ── Fetch profile ─────────────────────────────────────────
+  const { data: profile, isLoading } = useQuery<EmployeeProfile>({
+    queryKey: ["employee-me"],
+    queryFn: async () => {
+      const res = await api.get("/employee/me");
+      return res.data?.data ?? res.data;
+    },
+    staleTime: 2 * 60_000,
+  });
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setQualifications((q) => [
-      ...q,
-      { id: Date.now().toString(), name: file.name, issuer: "Uploaded", year: new Date().getFullYear().toString(), fileName: file.name },
-    ]);
-    toast({ title: "Document uploaded", description: file.name });
-  };
+  // Populate form when profile loads
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        phone: profile.phone ?? "",
+        street: profile.address?.street ?? "",
+        city: profile.address?.city ?? "",
+        state: profile.address?.state ?? "",
+        country: profile.address?.country ?? "",
+        emergencyContactName: profile.emergencyContactName ?? "",
+        emergencyContactPhone: profile.emergencyContactPhone ?? "",
+        bankName: profile.bankName ?? "",
+        bankAccountNumber: profile.bankAccountNumber ?? "",
+        nationality: profile.nationality ?? "",
+      });
+    }
+  }, [profile]);
 
+  // ── Save mutation ─────────────────────────────────────────
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      api.patch("/employee/me", {
+        phone: form.phone || undefined,
+        address: {
+          street: form.street || undefined,
+          city: form.city || undefined,
+          state: form.state || undefined,
+          country: form.country || undefined,
+        },
+        emergencyContactName: form.emergencyContactName || undefined,
+        emergencyContactPhone: form.emergencyContactPhone || undefined,
+        bankName: form.bankName || undefined,
+        bankAccountNumber: form.bankAccountNumber || undefined,
+        nationality: form.nationality || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee-me"] });
+      setEditing(false);
+      toast.success("Profile updated successfully.");
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message ?? "Failed to update profile"),
+  });
+
+  const setF = (key: keyof EditForm, value: string) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  if (isLoading) {
+    return (
+      <PortalLayout
+        title="My Profile"
+        subtitle="Personal details, employment history & qualifications"
+      >
+        <div className="flex items-center justify-center h-48 gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">Loading profile…</span>
+        </div>
+      </PortalLayout>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────
   return (
-    <PortalLayout title="My Profile" subtitle="Personal details, employment history & qualifications">
+    <PortalLayout
+      title="My Profile"
+      subtitle="Personal details, employment history & qualifications"
+    >
       <Tabs defaultValue="personal" className="space-y-4">
         <TabsList>
           <TabsTrigger value="personal">Personal Details</TabsTrigger>
@@ -78,97 +178,428 @@ export default function MyProfile() {
           <TabsTrigger value="documents">Qualifications</TabsTrigger>
         </TabsList>
 
+        {/* ── Personal Details ── */}
         <TabsContent value="personal">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Personal Details</CardTitle>
               {editing ? (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setEditing(false)}>Cancel</Button>
-                  <Button size="sm" onClick={handleSave}>Save</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditing(false)}
+                    disabled={saveMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={saveMutation.isPending}
+                    onClick={() => saveMutation.mutate()}
+                  >
+                    {saveMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{" "}
+                        Saving…
+                      </>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
                 </div>
               ) : (
-                <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Edit</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditing(true)}
+                >
+                  Edit
+                </Button>
               )}
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><Label>First name</Label><Input value={user?.firstName ?? ""} disabled /></div>
-                <div><Label>Last name</Label><Input value={user?.lastName ?? ""} disabled /></div>
-                <div><Label>Email</Label><Input value={user?.email ?? ""} disabled /></div>
-                <div><Label>Phone</Label><Input value={form.phone} disabled={!editing} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-                <div className="md:col-span-2"><Label>Address</Label><Input value={form.address} disabled={!editing} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-              </div>
-
-              <Separator />
-              <div>
-                <h3 className="text-sm font-semibold mb-3">Emergency Contact</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><Label>Name</Label><Input value={form.emergencyName} disabled={!editing} onChange={(e) => setForm({ ...form, emergencyName: e.target.value })} /></div>
-                  <div><Label>Phone</Label><Input value={form.emergencyPhone} disabled={!editing} onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value })} /></div>
-                </div>
-              </div>
-
-              <Separator />
+              {/* Identity — read only */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <h3 className="text-sm font-semibold">Bank Details</h3>
-                  <Badge variant="outline" className="text-[10px]"><AlertCircle className="h-3 w-3 mr-1" />Changes require HR approval</Badge>
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold">Identity</h3>
+                  <Badge variant="outline" className="text-[10px]">
+                    Read only
+                  </Badge>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><Label>Bank name</Label><Input value={form.bankName} disabled={!editing} onChange={(e) => setForm({ ...form, bankName: e.target.value })} /></div>
-                  <div><Label>Account number</Label><Input value={form.accountNumber} disabled={!editing} onChange={(e) => setForm({ ...form, accountNumber: e.target.value })} /></div>
+                  <div>
+                    <Label>First name</Label>
+                    <Input
+                      value={profile?.firstName ?? ""}
+                      disabled
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Last name</Label>
+                    <Input
+                      value={profile?.lastName ?? ""}
+                      disabled
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      value={profile?.email ?? ""}
+                      disabled
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Employee Number</Label>
+                    <Input
+                      value={profile?.employeeNumber ?? ""}
+                      disabled
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Date of Birth</Label>
+                    <Input
+                      value={
+                        profile?.dateOfBirth
+                          ? new Date(profile.dateOfBirth).toLocaleDateString(
+                              "en-GB",
+                            )
+                          : "—"
+                      }
+                      disabled
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Nationality</Label>
+                    <Input
+                      value={
+                        editing
+                          ? form.nationality
+                          : (profile?.nationality ?? "—")
+                      }
+                      disabled={!editing}
+                      onChange={(e) => setF("nationality", e.target.value)}
+                      className="mt-1.5"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Contact */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold">Contact</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Phone</Label>
+                    <Input
+                      value={editing ? form.phone : (profile?.phone ?? "—")}
+                      disabled={!editing}
+                      onChange={(e) => setF("phone", e.target.value)}
+                      placeholder="+250700000000"
+                      className="mt-1.5"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Address */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold">Address</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label>Street</Label>
+                    <Input
+                      value={
+                        editing
+                          ? form.street
+                          : (profile?.address?.street ?? "—")
+                      }
+                      disabled={!editing}
+                      onChange={(e) => setF("street", e.target.value)}
+                      placeholder="123 Main Street"
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>City</Label>
+                    <Input
+                      value={
+                        editing ? form.city : (profile?.address?.city ?? "—")
+                      }
+                      disabled={!editing}
+                      onChange={(e) => setF("city", e.target.value)}
+                      placeholder="Kigali"
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Country</Label>
+                    <Input
+                      value={
+                        editing
+                          ? form.country
+                          : (profile?.address?.country ?? "—")
+                      }
+                      disabled={!editing}
+                      onChange={(e) => setF("country", e.target.value)}
+                      placeholder="Rwanda"
+                      className="mt-1.5"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Emergency contact */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold">Emergency Contact</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      value={
+                        editing
+                          ? form.emergencyContactName
+                          : (profile?.emergencyContactName ?? "—")
+                      }
+                      disabled={!editing}
+                      onChange={(e) =>
+                        setF("emergencyContactName", e.target.value)
+                      }
+                      placeholder="Jane Doe"
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Phone</Label>
+                    <Input
+                      value={
+                        editing
+                          ? form.emergencyContactPhone
+                          : (profile?.emergencyContactPhone ?? "—")
+                      }
+                      disabled={!editing}
+                      onChange={(e) =>
+                        setF("emergencyContactPhone", e.target.value)
+                      }
+                      placeholder="+250788000000"
+                      className="mt-1.5"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Bank details */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Banknote className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold">Bank Details</h3>
+                  <Badge variant="outline" className="text-[10px]">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Changes require HR approval
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Bank name</Label>
+                    <Input
+                      value={
+                        editing ? form.bankName : (profile?.bankName ?? "—")
+                      }
+                      disabled={!editing}
+                      onChange={(e) => setF("bankName", e.target.value)}
+                      placeholder="Bank of Kigali"
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Account number</Label>
+                    <Input
+                      value={
+                        editing
+                          ? form.bankAccountNumber
+                          : (profile?.bankAccountNumber ?? "—")
+                      }
+                      disabled={!editing}
+                      onChange={(e) =>
+                        setF("bankAccountNumber", e.target.value)
+                      }
+                      placeholder="00123456789"
+                      className="mt-1.5"
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* ── Employment ── */}
         <TabsContent value="employment">
           <Card>
-            <CardHeader><CardTitle className="text-base">Employment History</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {employmentHistory.map((r) => (
-                <div key={r.id} className="flex items-start gap-3 p-3 rounded-lg border">
-                  <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center"><Briefcase className="h-4 w-4" /></div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold">{r.role}</p>
-                      {r.current && <Badge className="text-[10px]">Current</Badge>}
+            <CardHeader>
+              <CardTitle className="text-base">Employment Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {profile ? (
+                <>
+                  {/* Current position */}
+                  <div className="flex items-start gap-3 p-4 rounded-lg border">
+                    <div className="h-9 w-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Briefcase className="h-4 w-4" />
                     </div>
-                    <p className="text-xs text-muted-foreground">{r.department}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {r.startDate} — {r.current ? "Present" : r.endDate}
-                    </p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold">
+                          {profile.jobTitle}
+                        </p>
+                        <Badge className="text-[10px]">Current</Badge>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] capitalize ${
+                            profile.employmentStatus === "active"
+                              ? "bg-success/10 text-success border-success/20"
+                              : "bg-warning/10 text-warning border-warning/20"
+                          }`}
+                        >
+                          {profile.employmentStatus}
+                        </Badge>
+                      </div>
+                      {profile.department && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {profile.department}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Started{" "}
+                        {new Date(profile.startDate).toLocaleDateString(
+                          "en-GB",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          },
+                        )}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+
+                  {/* Employment meta */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                    {[
+                      { label: "Employee No.", value: profile.employeeNumber },
+                      {
+                        label: "Employment Type",
+                        value: profile.employmentType?.replace(/_/g, " "),
+                      },
+                      { label: "Reports To", value: profile.reportsTo ?? "—" },
+                      {
+                        label: "Probation Ends",
+                        value: profile.probationEndDate
+                          ? new Date(
+                              profile.probationEndDate,
+                            ).toLocaleDateString("en-GB")
+                          : "—",
+                      },
+                      { label: "Tax ID", value: profile.taxId ?? "—" },
+                    ].map((f) => (
+                      <div key={f.label} className="p-3 rounded-lg bg-muted/30">
+                        <p className="text-xs text-muted-foreground">
+                          {f.label}
+                        </p>
+                        <p className="font-medium capitalize mt-0.5">
+                          {f.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Leave summary */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                      Leave Entitlements
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        {
+                          name: "Annual Leave",
+                          balance:
+                            profile.annualLeaveBalance -
+                            profile.annualLeaveUsed,
+                          total: profile.annualLeaveBalance,
+                        },
+                        {
+                          name: "Sick Leave",
+                          balance:
+                            profile.sickLeaveBalance - profile.sickLeaveUsed,
+                          total: profile.sickLeaveBalance,
+                        },
+                      ].map((l) => (
+                        <div key={l.name} className="p-3 rounded-lg border">
+                          <p className="text-xs text-muted-foreground">
+                            {l.name}
+                          </p>
+                          <p className="text-lg font-bold mt-0.5">
+                            {l.balance}
+                            <span className="text-xs font-normal text-muted-foreground ml-1">
+                              / {l.total} days
+                            </span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Employment details not available.
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* ── Qualifications (static for now — Learning module will wire this) ── */}
         <TabsContent value="documents">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Qualifications & Certificates</CardTitle>
+              <CardTitle className="text-base">
+                Qualifications & Certificates
+              </CardTitle>
               <Button size="sm" asChild>
                 <label className="cursor-pointer">
                   <Upload className="h-3.5 w-3.5 mr-1.5" /> Upload
-                  <input type="file" className="hidden" onChange={handleUpload} />
+                  <input type="file" className="hidden" onChange={() => {}} />
                 </label>
               </Button>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {qualifications.map((q) => (
-                <div key={q.id} className="flex items-center gap-3 p-3 rounded-lg border">
-                  <div className="h-9 w-9 rounded-md bg-success/10 text-success flex items-center justify-center"><GraduationCap className="h-4 w-4" /></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{q.name}</p>
-                    <p className="text-xs text-muted-foreground">{q.issuer} • {q.year}</p>
-                  </div>
-                  <Badge variant="outline" className="text-[10px]"><FileCheck2 className="h-3 w-3 mr-1" />Verified</Badge>
-                </div>
-              ))}
+            <CardContent>
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Document management will be available when the Learning module
+                is active.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>

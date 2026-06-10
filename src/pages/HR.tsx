@@ -19,146 +19,140 @@ import {
   UserCheck,
   CalendarDays,
   GraduationCap,
-  AlertCircle,
   Wallet,
   Search,
   Download,
+  Loader2,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
-interface EmployeeRow {
-  id: string;
-  name: string;
+// ─── Types ────────────────────────────────────────────────────
+
+interface Employee {
+  _id: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  department: string;
-  position: string;
-  status: "active" | "on_leave" | "probation" | "exited";
-  leaveBalance: number;
-  trainingDue: number;
-  outstandingTasks: number;
-  lastPayslip: string;
+  department: string | null;
+  jobTitle: string;
+  employmentStatus: string;
+  annualLeaveBalance: number;
+  annualLeaveUsed: number;
+  sickLeaveBalance: number;
+  sickLeaveUsed: number;
+  salary: number | null;
+  salaryCurrency: string;
 }
 
-const fallbackEmployees: EmployeeRow[] = [
-  {
-    id: "e1",
-    name: "Amaka Obi",
-    email: "amaka.obi@acme.co",
-    department: "Finance",
-    position: "Senior Accountant",
-    status: "active",
-    leaveBalance: 14,
-    trainingDue: 1,
-    outstandingTasks: 2,
-    lastPayslip: "May 2026",
-  },
-  {
-    id: "e2",
-    name: "David Mwangi",
-    email: "david.m@acme.co",
-    department: "Operations",
-    position: "Ops Manager",
-    status: "on_leave",
-    leaveBalance: 6,
-    trainingDue: 0,
-    outstandingTasks: 0,
-    lastPayslip: "May 2026",
-  },
-  {
-    id: "e3",
-    name: "Fatima Diallo",
-    email: "fatima.d@acme.co",
-    department: "HR",
-    position: "HR Officer",
-    status: "active",
-    leaveBalance: 18,
-    trainingDue: 2,
-    outstandingTasks: 1,
-    lastPayslip: "May 2026",
-  },
-  {
-    id: "e4",
-    name: "Joshua Bello",
-    email: "joshua.b@acme.co",
-    department: "Engineering",
-    position: "Software Engineer",
-    status: "probation",
-    leaveBalance: 5,
-    trainingDue: 3,
-    outstandingTasks: 4,
-    lastPayslip: "May 2026",
-  },
-  {
-    id: "e5",
-    name: "Linda Okafor",
-    email: "linda.o@acme.co",
-    department: "Sales",
-    position: "Account Executive",
-    status: "active",
-    leaveBalance: 12,
-    trainingDue: 0,
-    outstandingTasks: 0,
-    lastPayslip: "May 2026",
-  },
-];
+interface PaginatedEmployees {
+  items: Employee[];
+  total: number;
+  totalPages: number;
+}
 
-const statusStyle: Record<EmployeeRow["status"], string> = {
+// ─── Helpers ──────────────────────────────────────────────────
+
+const statusStyle: Record<string, string> = {
   active: "bg-success/10 text-success border-success/20",
   on_leave: "bg-warning/10 text-warning border-warning/20",
-  probation: "bg-info/10 text-info border-info/20",
-  exited: "bg-destructive/10 text-destructive border-destructive/20",
+  suspended: "bg-orange-100 text-orange-700 border-orange-200",
+  terminated: "bg-destructive/10 text-destructive border-destructive/20",
+  resigned: "bg-muted text-muted-foreground",
 };
 
-const statusLabel: Record<EmployeeRow["status"], string> = {
+const statusLabel: Record<string, string> = {
   active: "Active",
   on_leave: "On Leave",
-  probation: "Probation",
-  exited: "Exited",
+  suspended: "Suspended",
+  terminated: "Terminated",
+  resigned: "Resigned",
 };
+
+// ─── Component ────────────────────────────────────────────────
 
 export default function HR() {
   const [search, setSearch] = useState("");
+  const { data: currentUser } = useCurrentUser();
 
-  const { data } = useQuery<EmployeeRow[]>({
-    queryKey: ["hr-employees"],
+  // ── Use clientProfileId — the ClientProfileRecord._id ────
+  // This is what employees are linked to via their clientId field.
+  // Returned by GET /auth/me after the getProfile() patch.
+  const clientProfileId = currentUser?.clientProfileId ?? null;
+
+  // ── Fetch employees for this client ──────────────────────
+  const { data, isLoading } = useQuery<PaginatedEmployees>({
+    queryKey: ["client-hr-employees", clientProfileId],
     queryFn: async () => {
-      try {
-        const res = await api.get("/hr/employees");
-        const list = res.data?.data ?? res.data;
-        return Array.isArray(list) && list.length ? list : fallbackEmployees;
-      } catch {
-        return fallbackEmployees;
-      }
+      const res = await api.get("/client/hr/employees", {
+        params: { clientProfileId, limit: 100 },
+      });
+      console.log(res.data, "checking if this calls");
+      return res.data?.data ?? res.data;
     },
+    enabled: !!clientProfileId,
+    staleTime: 60_000,
   });
 
-  const employees = data ?? fallbackEmployees;
+  const employees = data?.items ?? [];
 
+  // ── Client-side search ────────────────────────────────────
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return employees;
     return employees.filter((e) =>
-      [e.name, e.email, e.department, e.position].some((v) =>
-        v.toLowerCase().includes(q),
-      ),
+      [
+        `${e.firstName} ${e.lastName}`,
+        e.email,
+        e.department ?? "",
+        e.jobTitle,
+      ].some((v) => v.toLowerCase().includes(q)),
     );
   }, [employees, search]);
 
-  const stats = useMemo(() => {
-    const total = employees.length;
-    const active = employees.filter((e) => e.status === "active").length;
-    const onLeave = employees.filter((e) => e.status === "on_leave").length;
-    const trainingDue = employees.reduce((s, e) => s + e.trainingDue, 0);
-    return { total, active, onLeave, trainingDue };
-  }, [employees]);
+  // ── Stats ─────────────────────────────────────────────────
+  const stats = useMemo(
+    () => ({
+      total: employees.length,
+      active: employees.filter((e) => e.employmentStatus === "active").length,
+      onLeave: employees.filter((e) => e.employmentStatus === "on_leave")
+        .length,
+      trainingDue: 0,
+    }),
+    [employees],
+  );
 
+  // ── Export CSV ────────────────────────────────────────────
+  const handleExport = () => {
+    const rows = [
+      ["Name", "Email", "Department", "Position", "Status"],
+      ...employees.map((e) => [
+        `${e.firstName} ${e.lastName}`,
+        e.email,
+        e.department ?? "—",
+        e.jobTitle,
+        statusLabel[e.employmentStatus] ?? e.employmentStatus,
+      ]),
+    ];
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `employees-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ─────────────────────────────────────────────────────────
   return (
     <PortalLayout
       title="Human Resources"
       subtitle="Overview of every employee's HR status, leave, payroll & training"
     >
       <div className="space-y-6">
+        {/* Stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Employees"
@@ -192,7 +186,9 @@ export default function HR() {
         <Card className="animate-fade-in">
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-base font-heading">Employees</CardTitle>
+              <CardTitle className="text-base font-heading">
+                Employees
+              </CardTitle>
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -203,148 +199,213 @@ export default function HR() {
                     className="pl-8 h-9 w-64"
                   />
                 </div>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  disabled={employees.length === 0}
+                >
                   <Download className="h-3.5 w-3.5 mr-1.5" /> Export
                 </Button>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="overview">
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="leave">Leave</TabsTrigger>
-                <TabsTrigger value="payroll">Payroll</TabsTrigger>
-                <TabsTrigger value="training">Training</TabsTrigger>
-              </TabsList>
+            {isLoading ? (
+              <div className="flex items-center justify-center h-40 gap-3 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Loading employees…</span>
+              </div>
+            ) : !clientProfileId ? (
+              <div className="text-center py-10 text-sm text-muted-foreground">
+                HR data is available for corporate clients. Contact your
+                administrator.
+              </div>
+            ) : (
+              <Tabs defaultValue="overview">
+                <TabsList>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="leave">Leave</TabsTrigger>
+                  <TabsTrigger value="payroll">Payroll</TabsTrigger>
+                  <TabsTrigger value="training">Training</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="overview" className="mt-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Tasks</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.map((e) => (
-                      <TableRow key={e.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-foreground">{e.name}</span>
-                            <span className="text-xs text-muted-foreground">{e.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">{e.department}</TableCell>
-                        <TableCell className="text-sm">{e.position}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={statusStyle[e.status]}>
-                            {statusLabel[e.status]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {e.outstandingTasks > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-warning text-sm">
-                              <AlertCircle className="h-3.5 w-3.5" />
-                              {e.outstandingTasks}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
-                          )}
-                        </TableCell>
+                {/* Overview */}
+                <TabsContent value="overview" className="mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={4}
+                            className="text-center text-sm text-muted-foreground py-8"
+                          >
+                            {search
+                              ? "No employees match your search."
+                              : "No employees have been added yet."}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filtered.map((e) => (
+                          <TableRow key={e._id}>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-foreground">
+                                  {e.firstName} {e.lastName}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {e.email}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {e.department ?? "—"}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {e.jobTitle}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  statusStyle[e.employmentStatus] ?? ""
+                                }
+                              >
+                                {statusLabel[e.employmentStatus] ??
+                                  e.employmentStatus}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
 
-              <TabsContent value="leave" className="mt-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Balance (days)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.map((e) => (
-                      <TableRow key={e.id}>
-                        <TableCell className="font-medium">{e.name}</TableCell>
-                        <TableCell className="text-sm">{e.department}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={statusStyle[e.status]}>
-                            {statusLabel[e.status]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">{e.leaveBalance}</TableCell>
+                {/* Leave */}
+                <TabsContent value="leave" className="mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">
+                          Annual Balance
+                        </TableHead>
+                        <TableHead className="text-right">
+                          Sick Balance
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-
-              <TabsContent value="payroll" className="mt-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead className="text-right">Last Payslip</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.map((e) => (
-                      <TableRow key={e.id}>
-                        <TableCell className="font-medium">{e.name}</TableCell>
-                        <TableCell className="text-sm">{e.department}</TableCell>
-                        <TableCell className="text-sm">{e.position}</TableCell>
-                        <TableCell className="text-right">
-                          <span className="inline-flex items-center gap-1 text-sm">
-                            <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
-                            {e.lastPayslip}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-
-              <TabsContent value="training" className="mt-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead className="text-right">Training Due</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.map((e) => (
-                      <TableRow key={e.id}>
-                        <TableCell className="font-medium">{e.name}</TableCell>
-                        <TableCell className="text-sm">{e.department}</TableCell>
-                        <TableCell className="text-right">
-                          {e.trainingDue > 0 ? (
-                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                              {e.trainingDue} pending
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((e) => (
+                        <TableRow key={e._id}>
+                          <TableCell className="font-medium">
+                            {e.firstName} {e.lastName}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {e.department ?? "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={statusStyle[e.employmentStatus] ?? ""}
+                            >
+                              {statusLabel[e.employmentStatus] ??
+                                e.employmentStatus}
                             </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">Up to date</span>
-                          )}
-                        </TableCell>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {e.annualLeaveBalance - e.annualLeaveUsed} /{" "}
+                            {e.annualLeaveBalance}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {e.sickLeaveBalance - e.sickLeaveUsed} /{" "}
+                            {e.sickLeaveBalance}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
+
+                {/* Payroll */}
+                <TabsContent value="payroll" className="mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead className="text-right">Salary</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-            </Tabs>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((e) => (
+                        <TableRow key={e._id}>
+                          <TableCell className="font-medium">
+                            {e.firstName} {e.lastName}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {e.department ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {e.jobTitle}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="inline-flex items-center gap-1 text-sm">
+                              <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                              {e.salary
+                                ? `${e.salaryCurrency} ${e.salary.toLocaleString()}`
+                                : "—"}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
+
+                {/* Training */}
+                <TabsContent value="training" className="mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead className="text-right">
+                          Training Due
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((e) => (
+                        <TableRow key={e._id}>
+                          <TableCell className="font-medium">
+                            {e.firstName} {e.lastName}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {e.department ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
+                            Available when Learning module is active
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>

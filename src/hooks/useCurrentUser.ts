@@ -14,6 +14,7 @@ export interface CurrentUser {
     classifications?: "individual" | "corporate" | string;
     kycStatus?: string;
   } | null;
+  clientProfileId?: string | null;
   tenantProfile?: any;
   [k: string]: any;
 }

@@ -128,6 +128,10 @@ export default function KycOnboarding() {
   const [sectionCompletion, setSectionCompletion] = useState<
     Record<string, boolean>
   >({});
+  const [submissionStatus, setSubmissionStatus] = useState<
+    OnboardingRecord["status"]
+  >("draft");
+  const [submittedAt, setSubmittedAt] = useState<string | null>(null);
 
   // ── Documents state — loaded from draft, updated on every upload/remove ──
   const [existingDocs, setExistingDocs] = useState<DocumentAttachment[]>([]);

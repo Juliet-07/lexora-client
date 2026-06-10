@@ -46,6 +46,7 @@ const App = () => (
           <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/hr" element={<HR />} />
+          <Route path="/profile" element={<Profile />} />
 
           {/* ── Employee portal (client_employee) ───────────── */}
           {employeeRoutes}

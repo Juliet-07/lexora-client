@@ -14,6 +14,8 @@ import {
   Target,
   GraduationCap,
   Inbox,
+  Users,
+  BarChart3,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -29,9 +31,14 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useCurrentUser, isEmployee } from "@/hooks/useCurrentUser";
+import {
+  useCurrentUser,
+  isEmployee,
+  PortalType,
+  getPortalType,
+} from "@/hooks/useCurrentUser";
 
-const clientItems = [
+const kycClientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Documents", url: "/documents", icon: FileText },
   { title: "Payments", url: "/payments", icon: CreditCard },
@@ -55,19 +62,71 @@ const employeeItems = [
   { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
+const boardItems = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "HR Overview", url: "/board/hr", icon: Users },
+  { title: "Payroll", url: "/board/payroll", icon: BarChart3 },
+  { title: "Documents", url: "/documents", icon: FileText },
+  { title: "Notifications", url: "/notifications", icon: Bell },
+];
+
+const clientClientItems = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Documents", url: "/documents", icon: FileText },
+  { title: "Notifications", url: "/notifications", icon: Bell },
+];
+
+const portalMeta: Record<
+  PortalType,
+  { label: string; initials: string; groupLabel: string }
+> = {
+  employee: {
+    label: "Employee Portal",
+    initials: "EP",
+    groupLabel: "My Workspace",
+  },
+  board: { label: "Board Portal", initials: "BP", groupLabel: "Board View" },
+  client_client: {
+    label: "Client Portal",
+    initials: "CP",
+    groupLabel: "My Portal",
+  },
+  kyc_client: {
+    label: "Client Portal",
+    initials: "CP",
+    groupLabel: "Main Menu",
+  },
+  unknown: { label: "Client Portal", initials: "CP", groupLabel: "Main Menu" },
+};
+
+function getNavItems(portalType: PortalType) {
+  switch (portalType) {
+    case "employee":
+      return employeeItems;
+    case "board":
+      return boardItems;
+    case "client_client":
+      return clientClientItems;
+    case "kyc_client":
+    default:
+      return kycClientItems;
+  }
+}
+
 export function PortalSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
   const { data: user } = useCurrentUser();
 
+  const portalType = getPortalType(user);
+  const meta = portalMeta[portalType];
+  const navItems = getNavItems(portalType);
+
   const handleLogout = () => {
     localStorage.removeItem("userToken");
     navigate("/login");
   };
-
-  const employee = isEmployee(user);
-  const mainItems = employee ? employeeItems : clientItems;
 
   return (
     <Sidebar collapsible="icon" className="gradient-sidebar border-r-0">
@@ -76,15 +135,17 @@ export function PortalSidebar() {
           <div className="flex items-center gap-3 px-3 py-4 mb-2">
             <div className="h-9 w-9 rounded-lg gradient-primary flex items-center justify-center shrink-0">
               <span className="text-sm font-bold text-sidebar-primary-foreground">
-                {employee ? "EP" : "CP"}
+                {meta.initials}
               </span>
             </div>
             {!collapsed && (
               <div className="animate-fade-in">
                 <p className="text-sm font-heading font-bold text-sidebar-primary-foreground">
-                  {employee ? "Employee Portal" : "Client Portal"}
+                  {meta.label}
                 </p>
-                <p className="text-xs text-sidebar-foreground/60">Welcome back</p>
+                <p className="text-xs text-sidebar-foreground/60">
+                  Welcome back
+                </p>
               </div>
             )}
           </div>
@@ -92,11 +153,11 @@ export function PortalSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">
-            {employee ? "My Workspace" : "Main Menu"}
+            {meta.groupLabel}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -135,9 +196,13 @@ export function PortalSidebar() {
             </div>
             <div className="animate-fade-in">
               <p className="text-xs font-medium text-sidebar-primary-foreground">
-                {user ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() : ""}
+                {user
+                  ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
+                  : ""}
               </p>
-              <p className="text-[10px] text-sidebar-foreground/50">{user?.email}</p>
+              <p className="text-[10px] text-sidebar-foreground/50">
+                {user?.email}
+              </p>
             </div>
           </div>
         )}

@@ -9,6 +9,20 @@ import { useForm } from "react-hook-form";
 import axios from "axios";
 import { setProfile, type ClientClassification } from "@/lib/profile";
 
+function getPostLoginRoute(user: any, kycStatus: string): string {
+  const roles: string[] = user?.roles ?? [];
+
+  if (
+    roles.includes("client_employee") ||
+    roles.includes("client_board") ||
+    roles.includes("client_client")
+  ) {
+    return "/dashboard";
+  }
+
+  return kycStatus === "not_started" ? "/onboarding" : "/dashboard";
+}
+
 export default function Login() {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
   const { handleSubmit } = useForm();
@@ -37,11 +51,14 @@ export default function Login() {
 
       localStorage.setItem("userToken", token);
 
-      // ── Route based on userType ───────────────────────────
-      // Employee users go straight to /dashboard which renders
-      // EmployeeDashboard via DashboardRouter. They have no
-      // KYC context and no client profile to check.
-      if (user?.userType === "employee") {
+      const roles: string[] = user?.roles ?? [];
+
+      const isOthers =
+        roles.includes("client_employee") ||
+        roles.includes("client_board") ||
+        roles.includes("client_client");
+
+      if (isOthers) {
         setIsLoading(false);
         navigate("/dashboard");
         return;

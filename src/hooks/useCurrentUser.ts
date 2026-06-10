@@ -7,7 +7,7 @@ export interface CurrentUser {
   lastName: string;
   email: string;
   phone?: string;
-  userType?: "client" | "employee" | "board" | string;
+  userType?: "client" | "employee" | string;
   roles?: string[];
   status?: string;
   clientProfile?: {
@@ -20,7 +20,7 @@ export interface CurrentUser {
 
 export function useCurrentUser() {
   return useQuery<CurrentUser>({
-    queryKey: ["superadmin-profile"],
+    queryKey: ["current-user"],
     queryFn: async () => {
       const res = await api.get("/auth/me");
       return res.data?.data ?? res.data;
@@ -33,6 +33,42 @@ export function hasRole(user: CurrentUser | undefined, role: string) {
   return !!user?.roles?.includes(role);
 }
 
-export function isEmployee(user: CurrentUser | undefined) {
-  return user?.userType === "employee" || hasRole(user, "client_employee");
+// ── Role-based portal type detection ─────────────────────────
+
+export function isEmployee(user: CurrentUser | undefined): boolean {
+  return hasRole(user, "client_employee");
+}
+
+export function isBoardMember(user: CurrentUser | undefined): boolean {
+  return hasRole(user, "client_board");
+}
+
+export function isClientUser(user: CurrentUser | undefined): boolean {
+  return hasRole(user, "client_client");
+}
+
+export function isKycClient(user: CurrentUser | undefined): boolean {
+  return hasRole(user, "client_primary");
+}
+
+// Convenience: is this user any kind of HR portal user?
+export function isHrPortalUser(user: CurrentUser | undefined): boolean {
+  return isEmployee(user) || isBoardMember(user);
+}
+
+// Derive portal type as a string — useful for switch statements
+export type PortalType =
+  | "employee"
+  | "board"
+  | "client_client"
+  | "kyc_client"
+  | "unknown";
+
+export function getPortalType(user: CurrentUser | undefined): PortalType {
+  if (!user) return "unknown";
+  if (isEmployee(user)) return "employee";
+  if (isBoardMember(user)) return "board";
+  if (isClientUser(user)) return "client_client";
+  if (isKycClient(user)) return "kyc_client";
+  return "unknown";
 }

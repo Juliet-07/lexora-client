@@ -166,6 +166,8 @@ export default function KycOnboarding() {
         if (record.documents?.length) {
           setExistingDocs(record.documents); // ← restore uploaded docs on resume
         }
+        if (record.status) setSubmissionStatus(record.status);
+        if (record.submittedAt) setSubmittedAt(record.submittedAt);
       })
       .catch(() => {})
       .finally(() => setIsLoadingDraft(false));

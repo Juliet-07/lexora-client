@@ -57,7 +57,7 @@ const employeeItems = [
   { title: "My Time", url: "/employee/time", icon: Clock },
   { title: "My Performance", url: "/employee/performance", icon: Target },
   { title: "My Training", url: "/employee/training", icon: GraduationCap },
-  { title: "My Documents", url: "/documents", icon: FileText },
+  { title: "My Documents", url: "/employee/documents", icon: FileText },
   { title: "My Requests", url: "/employee/requests", icon: Inbox },
   { title: "Notifications", url: "/notifications", icon: Bell },
 ];

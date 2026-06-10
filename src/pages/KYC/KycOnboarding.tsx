@@ -128,6 +128,10 @@ export default function KycOnboarding() {
   const [sectionCompletion, setSectionCompletion] = useState<
     Record<string, boolean>
   >({});
+  const [submissionStatus, setSubmissionStatus] = useState<
+    OnboardingRecord["status"]
+  >("draft");
+  const [submittedAt, setSubmittedAt] = useState<string | null>(null);
 
   // ── Documents state — loaded from draft, updated on every upload/remove ──
   const [existingDocs, setExistingDocs] = useState<DocumentAttachment[]>([]);
@@ -162,6 +166,8 @@ export default function KycOnboarding() {
         if (record.documents?.length) {
           setExistingDocs(record.documents); // ← restore uploaded docs on resume
         }
+        if (record.status) setSubmissionStatus(record.status);
+        if (record.submittedAt) setSubmittedAt(record.submittedAt);
       })
       .catch(() => {})
       .finally(() => setIsLoadingDraft(false));
@@ -354,6 +360,88 @@ export default function KycOnboarding() {
 
   const meta = classificationMeta[classification];
   const ClassIcon = meta.icon;
+
+  // ── Already submitted — show closed/completed view ────────
+  if (submissionStatus && submissionStatus !== "draft") {
+    const statusLabel: Record<string, string> = {
+      submitted: "Submitted",
+      under_review: "Under Review",
+      approved: "Approved",
+      rejected: "Needs Attention",
+    };
+    const statusTone: Record<string, string> = {
+      submitted: "bg-info/10 text-info border-info/20",
+      under_review: "bg-warning/10 text-warning border-warning/20",
+      approved: "bg-success/10 text-success border-success/20",
+      rejected: "bg-destructive/10 text-destructive border-destructive/20",
+    };
+    return (
+      <PortalLayout
+        title="Client Onboarding"
+        subtitle="KYC / AML Compliance Form"
+      >
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-0 shadow-md overflow-hidden">
+            <div className="gradient-primary p-8 text-primary-foreground text-center">
+              <div className="mx-auto h-16 w-16 rounded-full bg-white/15 flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-9 w-9" />
+              </div>
+              <h2 className="text-2xl font-heading font-bold mb-1">
+                Onboarding Completed
+              </h2>
+              <p className="text-sm opacity-90">
+                Thank you — your KYC / AML form has been submitted.
+              </p>
+            </div>
+            <CardContent className="p-8 space-y-5 text-center">
+              <Badge
+                variant="outline"
+                className={statusTone[submissionStatus] ?? ""}
+              >
+                {statusLabel[submissionStatus] ?? submissionStatus}
+              </Badge>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>
+                  Client type:{" "}
+                  <span className="font-medium text-foreground">
+                    {meta.label}
+                  </span>
+                </p>
+                {submittedAt && (
+                  <p>
+                    Submitted on{" "}
+                    <span className="font-medium text-foreground">
+                      {new Date(submittedAt).toLocaleString()}
+                    </span>
+                  </p>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Your submission is now closed. Our compliance team will be in
+                touch if anything else is required. You can monitor progress and
+                notifications from your dashboard.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
+                <Button
+                  className="gradient-primary text-primary-foreground"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Go to Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/notifications")}
+                >
+                  View Notifications
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PortalLayout>
+    );
+  }
+
   const currentStepId = steps[step - 1].id;
   const isLastStep = step === steps.length;
 

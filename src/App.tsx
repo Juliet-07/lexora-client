@@ -13,6 +13,7 @@ import KycOnboarding from "@/pages/KYC/KycOnboarding";
 import Notifications from "@/pages/Notifications";
 import Alerts from "@/pages/Alerts";
 import HR from "@/pages/HR";
+import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 import { employeeRoutes } from "@/routes/employee.routes";
 import { boardRoutes } from "@/routes/board.routes";

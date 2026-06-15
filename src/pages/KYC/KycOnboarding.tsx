@@ -362,7 +362,7 @@ export default function KycOnboarding() {
   const ClassIcon = meta.icon;
 
   // ── Already submitted — show closed/completed view ────────
-  if (submissionStatus && submissionStatus !== "draft") {
+  if (submissionStatus === "submitted") {
     const statusLabel: Record<string, string> = {
       submitted: "Submitted",
       under_review: "Under Review",

@@ -23,6 +23,9 @@ import {
   Search,
   Download,
   Loader2,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -52,6 +55,30 @@ interface PaginatedEmployees {
   totalPages: number;
 }
 
+interface LeaveRequest {
+  _id: string;
+  employeeId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    jobTitle: string;
+  } | null;
+  type: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  reason: string;
+  status: string;
+  reviewNote: string | null;
+  createdAt: string;
+}
+
+interface PaginatedLeave {
+  items: LeaveRequest[];
+  total: number;
+  totalPages: number;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────
 
 const statusStyle: Record<string, string> = {
@@ -70,34 +97,73 @@ const statusLabel: Record<string, string> = {
   resigned: "Resigned",
 };
 
+const LEAVE_STATUS_STYLE: Record<string, string> = {
+  pending: "bg-warning/10 text-warning border-warning/20",
+  approved: "bg-success/10 text-success border-success/20",
+  rejected: "bg-destructive/10 text-destructive border-destructive/20",
+  cancelled: "bg-muted text-muted-foreground",
+};
+
+const LEAVE_TYPES: Record<string, string> = {
+  annual: "Annual",
+  sick: "Sick",
+  maternity: "Maternity",
+  paternity: "Paternity",
+  compassionate: "Compassionate",
+  study: "Study",
+  unpaid: "Unpaid",
+};
+
+const fmt = (d: string) =>
+  new Date(d).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
 // ─── Component ────────────────────────────────────────────────
 
 export default function HR() {
   const [search, setSearch] = useState("");
+  const [leaveStatus, setLeaveStatus] = useState("all");
   const { data: currentUser } = useCurrentUser();
 
-  // ── Use clientProfileId — the ClientProfileRecord._id ────
-  // This is what employees are linked to via their clientId field.
-  // Returned by GET /auth/me after the getProfile() patch.
   const clientProfileId = currentUser?.clientProfileId ?? null;
 
-  // ── Fetch employees for this client ──────────────────────
-  const { data, isLoading } = useQuery<PaginatedEmployees>({
-    queryKey: ["client-hr-employees", clientProfileId],
-    queryFn: async () => {
-      const res = await api.get("/client/hr/employees", {
-        params: { clientProfileId, limit: 100 },
-      });
-      console.log(res.data, "checking if this calls");
-      return res.data?.data ?? res.data;
+  // ── Fetch employees ───────────────────────────────────────
+  const { data: empData, isLoading: empLoading } = useQuery<PaginatedEmployees>(
+    {
+      queryKey: ["client-hr-employees", clientProfileId],
+      queryFn: async () => {
+        const res = await api.get("/client/hr/employees", {
+          params: { clientProfileId, limit: 100 },
+        });
+        return res.data?.data ?? res.data;
+      },
+      enabled: !!clientProfileId,
+      staleTime: 60_000,
     },
-    enabled: !!clientProfileId,
-    staleTime: 60_000,
-  });
+  );
 
-  const employees = data?.items ?? [];
+  // ── Fetch leave requests ──────────────────────────────────
+  const { data: leaveData, isLoading: leaveLoading } = useQuery<PaginatedLeave>(
+    {
+      queryKey: ["client-hr-leave", clientProfileId, leaveStatus],
+      queryFn: async () => {
+        const params: any = { clientProfileId, limit: 100 };
+        if (leaveStatus !== "all") params.status = leaveStatus;
+        const res = await api.get("/client/hr/leave", { params });
+        return res.data?.data ?? res.data;
+      },
+      enabled: !!clientProfileId,
+      staleTime: 30_000,
+    },
+  );
 
-  // ── Client-side search ────────────────────────────────────
+  const employees = empData?.items ?? [];
+  const leaveRequests = leaveData?.items ?? [];
+
+  // ── Client-side search (employees) ───────────────────────
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return employees;
@@ -122,6 +188,10 @@ export default function HR() {
     }),
     [employees],
   );
+
+  const pendingLeave = leaveRequests.filter(
+    (r) => r.status === "pending",
+  ).length;
 
   // ── Export CSV ────────────────────────────────────────────
   const handleExport = () => {
@@ -176,10 +246,10 @@ export default function HR() {
             variant="warning"
           />
           <StatCard
-            title="Training Due"
-            value={String(stats.trainingDue)}
-            subtitle="Across team"
-            icon={GraduationCap}
+            title="Pending Leave"
+            value={String(pendingLeave)}
+            subtitle="Awaiting approval"
+            icon={Clock}
           />
         </div>
 
@@ -211,12 +281,7 @@ export default function HR() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center h-40 gap-3 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-sm">Loading employees…</span>
-              </div>
-            ) : !clientProfileId ? (
+            {!clientProfileId ? (
               <div className="text-center py-10 text-sm text-muted-foreground">
                 HR data is available for corporate clients. Contact your
                 administrator.
@@ -225,120 +290,167 @@ export default function HR() {
               <Tabs defaultValue="overview">
                 <TabsList>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="leave">Leave</TabsTrigger>
+                  <TabsTrigger value="leave">
+                    Leave
+                    {pendingLeave > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-1.5 text-[10px] px-1.5"
+                      >
+                        {pendingLeave}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
                   <TabsTrigger value="payroll">Payroll</TabsTrigger>
                   <TabsTrigger value="training">Training</TabsTrigger>
                 </TabsList>
 
-                {/* Overview */}
+                {/* ── Overview tab ── */}
                 <TabsContent value="overview" className="mt-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Employee</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.length === 0 ? (
+                  {empLoading ? (
+                    <LoadingState />
+                  ) : (
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell
-                            colSpan={4}
-                            className="text-center text-sm text-muted-foreground py-8"
-                          >
-                            {search
-                              ? "No employees match your search."
-                              : "No employees have been added yet."}
-                          </TableCell>
+                          <TableHead>Employee</TableHead>
+                          <TableHead>Department</TableHead>
+                          <TableHead>Position</TableHead>
+                          <TableHead>Status</TableHead>
                         </TableRow>
-                      ) : (
-                        filtered.map((e) => (
-                          <TableRow key={e._id}>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium text-foreground">
-                                  {e.firstName} {e.lastName}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {e.email}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              {e.department ?? "—"}
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              {e.jobTitle}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant="outline"
-                                className={
-                                  statusStyle[e.employmentStatus] ?? ""
-                                }
-                              >
-                                {statusLabel[e.employmentStatus] ??
-                                  e.employmentStatus}
-                              </Badge>
+                      </TableHeader>
+                      <TableBody>
+                        {filtered.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              className="text-center text-sm text-muted-foreground py-8"
+                            >
+                              {search
+                                ? "No employees match your search."
+                                : "No employees have been added yet."}
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          filtered.map((e) => (
+                            <TableRow key={e._id}>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-foreground">
+                                    {e.firstName} {e.lastName}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {e.email}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {e.department ?? "—"}
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {e.jobTitle}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    statusStyle[e.employmentStatus] ?? ""
+                                  }
+                                >
+                                  {statusLabel[e.employmentStatus] ??
+                                    e.employmentStatus}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  )}
                 </TabsContent>
 
-                {/* Leave */}
+                {/* ── Leave tab — real data ── */}
                 <TabsContent value="leave" className="mt-4">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Employee</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">
-                          Annual Balance
-                        </TableHead>
-                        <TableHead className="text-right">
-                          Sick Balance
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.map((e) => (
-                        <TableRow key={e._id}>
-                          <TableCell className="font-medium">
-                            {e.firstName} {e.lastName}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {e.department ?? "—"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={statusStyle[e.employmentStatus] ?? ""}
+                  {leaveLoading ? (
+                    <LoadingState />
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Status filter */}
+                      <div className="flex gap-2 flex-wrap">
+                        {["all", "pending", "approved", "rejected"].map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setLeaveStatus(s)}
+                            className={`text-xs px-3 py-1 rounded-full border transition-colors capitalize ${
+                              leaveStatus === s
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border text-muted-foreground hover:border-primary/40"
+                            }`}
+                          >
+                            {s === "all" ? "All" : s}
+                          </button>
+                        ))}
+                      </div>
+
+                      {leaveRequests.length === 0 ? (
+                        <p className="text-center text-sm text-muted-foreground py-8">
+                          No leave requests found.
+                        </p>
+                      ) : (
+                        leaveRequests.map((r) => {
+                          const emp = r.employeeId;
+                          const name = emp
+                            ? `${emp.firstName} ${emp.lastName}`
+                            : "—";
+
+                          return (
+                            <div
+                              key={r._id}
+                              className="flex items-center gap-3 p-3 rounded-lg border"
                             >
-                              {statusLabel[e.employmentStatus] ??
-                                e.employmentStatus}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {e.annualLeaveBalance - e.annualLeaveUsed} /{" "}
-                            {e.annualLeaveBalance}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {e.sickLeaveBalance - e.sickLeaveUsed} /{" "}
-                            {e.sickLeaveBalance}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                              {/* Avatar */}
+                              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                {name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </div>
+
+                              {/* Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-medium">{name}</p>
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px]"
+                                  >
+                                    {LEAVE_TYPES[r.type] ?? r.type}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {fmt(r.startDate)} → {fmt(r.endDate)} ·{" "}
+                                  {r.days}d · {r.reason}
+                                </p>
+                              </div>
+
+                              {/* Status */}
+                              <Badge
+                                variant="outline"
+                                className={`shrink-0 ${LEAVE_STATUS_STYLE[r.status] ?? ""}`}
+                              >
+                                <span className="capitalize">{r.status}</span>
+                              </Badge>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
                 </TabsContent>
 
-                {/* Payroll */}
+                {/* ── Payroll tab ── */}
                 <TabsContent value="payroll" className="mt-4">
                   <Table>
                     <TableHeader>
@@ -375,7 +487,7 @@ export default function HR() {
                   </Table>
                 </TabsContent>
 
-                {/* Training */}
+                {/* ── Training tab ── */}
                 <TabsContent value="training" className="mt-4">
                   <Table>
                     <TableHeader>
@@ -410,5 +522,16 @@ export default function HR() {
         </Card>
       </div>
     </PortalLayout>
+  );
+}
+
+// ─── Loading state ────────────────────────────────────────────
+
+function LoadingState() {
+  return (
+    <div className="flex items-center justify-center h-40 gap-3 text-muted-foreground">
+      <Loader2 className="h-5 w-5 animate-spin" />
+      <span className="text-sm">Loading…</span>
+    </div>
   );
 }

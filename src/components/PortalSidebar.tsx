@@ -42,25 +42,9 @@ const kycClientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Onboarding", url: "/onboarding", icon: CheckSquare },
   { title: "Alerts", url: "/alerts", icon: AlertTriangle },
-  { title: "HR", url: "/hr", icon: Users },
   { title: "Payments", url: "/payments", icon: CreditCard },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "My Profile", url: "/profile", icon: User },
-  // { title: "Documents", url: "/documents", icon: FileText },
-];
-
-const employeeItems = [
-  { title: "My Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "My Profile", url: "/employee/profile", icon: User },
-  { title: "My Leave", url: "/employee/leave", icon: CalendarDays },
-  { title: "My Payslips", url: "/employee/payslips", icon: Wallet },
-  { title: "My Loans", url: "/employee/loans", icon: Banknote },
-  { title: "My Time", url: "/employee/time", icon: Clock },
-  { title: "My Performance", url: "/employee/performance", icon: Target },
-  { title: "My Training", url: "/employee/training", icon: GraduationCap },
-  { title: "My Documents", url: "/employee/documents", icon: FileText },
-  { title: "My Requests", url: "/employee/requests", icon: Inbox },
-  { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
 const boardItems = [
@@ -102,8 +86,6 @@ const portalMeta: Record<
 
 function getNavItems(portalType: PortalType) {
   switch (portalType) {
-    case "employee":
-      return employeeItems;
     case "board":
       return boardItems;
     case "client_client":

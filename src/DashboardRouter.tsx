@@ -1,15 +1,8 @@
 import { PortalLayout } from "@/components/PortalLayout";
-import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
 import BoardDashboard from "./pages/Board/BoardDashboard";
 import ClientDashboard from "./pages/Client/ClientDashboard";
 import Index from "./pages/Index";
-import {
-  useCurrentUser,
-  isEmployee,
-  isBoardMember,
-  isClientUser,
-  getPortalType,
-} from "@/hooks/useCurrentUser";
+import { useCurrentUser, getPortalType } from "@/hooks/useCurrentUser";
 
 export default function DashboardRouter() {
   const { data: user, isLoading } = useCurrentUser();
@@ -25,8 +18,6 @@ export default function DashboardRouter() {
   const portalType = getPortalType(user);
 
   switch (portalType) {
-    case "employee":
-      return <EmployeeDashboard />;
     case "board":
       return <BoardDashboard />;
     case "client_client":

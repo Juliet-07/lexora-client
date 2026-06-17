@@ -12,10 +12,8 @@ import Messages from "@/pages/Messages";
 import KycOnboarding from "@/pages/KYC/KycOnboarding";
 import Notifications from "@/pages/Notifications";
 import Alerts from "@/pages/Alerts";
-import HR from "@/pages/HR";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
-import { employeeRoutes } from "@/routes/employee.routes";
 import { boardRoutes } from "@/routes/board.routes";
 import { clientClientRoutes } from "@/routes/client.routes";
 
@@ -45,11 +43,7 @@ const App = () => (
           <Route path="/messages" element={<Messages />} />
           <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/alerts" element={<Alerts />} />
-          <Route path="/hr" element={<HR />} />
           <Route path="/profile" element={<Profile />} />
-
-          {/* ── Employee portal (client_employee) ───────────── */}
-          {employeeRoutes}
 
           {/* ── Board portal (client_board) ─────────────────── */}
           {boardRoutes}

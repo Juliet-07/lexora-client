@@ -86,8 +86,6 @@ const portalMeta: Record<
 
 function getNavItems(portalType: PortalType) {
   switch (portalType) {
-    case "employee":
-      return employeeItems;
     case "board":
       return boardItems;
     case "client_client":

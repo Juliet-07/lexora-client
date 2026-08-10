@@ -13,6 +13,10 @@ import KycOnboarding from "@/pages/KYC/KycOnboarding";
 import Notifications from "@/pages/Notifications";
 import Alerts from "@/pages/Alerts";
 import Profile from "@/pages/Profile";
+import Projects from "@/pages/Projects/Projects";
+import ProjectDetail from "@/pages/Projects/ProjectDetail";
+import Newsletters from "@/pages/Newsletters";
+import ServiceDesk from "@/pages/ServiceDesk";
 import NotFound from "@/pages/NotFound";
 import { boardRoutes } from "@/routes/board.routes";
 import { clientClientRoutes } from "@/routes/client.routes";
@@ -44,6 +48,10 @@ const App = () => (
           <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="/newsletters" element={<Newsletters />} />
+          <Route path="/service-desk" element={<ServiceDesk />} />
 
           {/* ── Board portal (client_board) ─────────────────── */}
           {boardRoutes}

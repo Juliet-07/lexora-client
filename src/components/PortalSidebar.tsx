@@ -16,6 +16,7 @@ import {
   Inbox,
   Users,
   BarChart3,
+  LifeBuoy,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -41,8 +42,11 @@ import {
 const kycClientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Onboarding", url: "/onboarding", icon: CheckSquare },
+  { title: "Projects", url: "/projects", icon: Target },
   { title: "Alerts", url: "/alerts", icon: AlertTriangle },
   { title: "Payments", url: "/payments", icon: CreditCard },
+  { title: "Newsletters", url: "/newsletters", icon: Inbox },
+  { title: "Service Desk", url: "/service-desk", icon: LifeBuoy },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "My Profile", url: "/profile", icon: User },
 ];

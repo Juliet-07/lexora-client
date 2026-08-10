@@ -16,6 +16,7 @@ import {
   Inbox,
   Users,
   BarChart3,
+  LifeBuoy,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";

@@ -53,6 +53,8 @@ const App = () => (
           <Route path="/newsletters" element={<Newsletters />} />
           <Route path="/service-desk" element={<ServiceDesk />} />
 
+          {/* ── Board portal (client_board) ─────────────────── */}
+          {boardRoutes}
 
           {/* ── Client-client portal (client_client) ────────── */}
           {clientClientRoutes}

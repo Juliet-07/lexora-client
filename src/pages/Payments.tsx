@@ -3,183 +3,471 @@ import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  CreditCard,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   DollarSign,
   Clock,
   CheckCircle2,
   Download,
-  ArrowRight,
-  Smartphone,
-  Building,
+  FileText,
+  AlertCircle,
+  Landmark,
+  ThumbsUp,
+  Flag,
 } from "lucide-react";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  fetchMyInvoices,
+  fetchMyInvoice,
+  downloadMyInvoicePdf,
+  markInvoiceStatus,
+  balanceOwed,
+  daysOverdue,
+  type ClientInvoice,
+  type ClientInvoiceStage,
+  type ClientInvoiceAction,
+} from "@/lib/invoices-api";
+import { useToast } from "@/hooks/use-toast";
 
-const invoices = [
-  { id: "INV-1042", description: "Tax Filing Service", amount: "$2,500.00", status: "Pending", date: "Apr 5, 2026" },
-  { id: "INV-1041", description: "Company Registration", amount: "$1,800.00", status: "Paid", date: "Mar 28, 2026" },
-  { id: "INV-1040", description: "Compliance Review", amount: "$950.00", status: "Paid", date: "Mar 15, 2026" },
-  { id: "INV-1039", description: "Legal Consultation", amount: "$600.00", status: "Overdue", date: "Feb 28, 2026" },
-];
+const money = (n: number, c = "USD") =>
+  n.toLocaleString(undefined, {
+    style: "currency",
+    currency: c,
+    maximumFractionDigits: 2,
+  });
 
-const invoiceStatusStyles: Record<string, string> = {
-  Pending: "bg-warning/10 text-warning border-warning/20",
+const invoiceStatusStyles: Record<ClientInvoiceStage, string> = {
+  Sent: "bg-warning/10 text-warning border-warning/20",
+  "Part Paid": "bg-info/10 text-info border-info/20",
   Paid: "bg-success/10 text-success border-success/20",
   Overdue: "bg-destructive/10 text-destructive border-destructive/20",
+  "Written Off": "bg-muted text-muted-foreground border-border",
 };
 
 export default function Payments() {
-  const [payOpen, setPayOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<typeof invoices[0] | null>(null);
-  const [paymentDone, setPaymentDone] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: invoices = [], isLoading } = useQuery({
+    queryKey: ["myInvoices"],
+    queryFn: fetchMyInvoices,
+  });
 
-  const handlePay = (invoice: typeof invoices[0]) => {
-    setSelectedInvoice(invoice);
-    setPaymentDone(false);
-    setPayOpen(true);
-  };
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const { data: detail } = useQuery({
+    queryKey: ["myInvoice", detailId],
+    queryFn: () => fetchMyInvoice(detailId!),
+    enabled: !!detailId,
+  });
+
+  const downloadMut = useMutation({
+    mutationFn: ({ id, ref }: { id: string; ref: string }) =>
+      downloadMyInvoicePdf(id, ref),
+    onError: () =>
+      toast({ title: "Failed to download", variant: "destructive" }),
+  });
+
+  // ── Client claim — "I've paid" / "there's an issue" ──────────
+  const [claimTarget, setClaimTarget] = useState<{
+    action: ClientInvoiceAction;
+  } | null>(null);
+  const [claimNote, setClaimNote] = useState("");
+  const claimMut = useMutation({
+    mutationFn: () =>
+      markInvoiceStatus(
+        detail!._id,
+        claimTarget!.action,
+        claimNote || undefined,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myInvoice", detailId] });
+      queryClient.invalidateQueries({ queryKey: ["myInvoices"] });
+      setClaimTarget(null);
+      setClaimNote("");
+      toast({
+        title:
+          claimTarget?.action === "Paid" ? "Marked as paid" : "Issue reported",
+        description:
+          "The firm has been notified and will confirm on their end.",
+      });
+    },
+    onError: () => toast({ title: "Failed to update", variant: "destructive" }),
+  });
+
+  // Real totals computed from real invoice data — no separate
+  // number the firm's own books could ever disagree with. "Paid
+  // this month" isn't shown since that needs real payment
+  // timestamps this view doesn't have; totals here stay honest
+  // about what's actually knowable from the invoice list alone.
+  const totalDue = invoices
+    .filter((i) => i.stage !== "Paid" && i.stage !== "Written Off")
+    .reduce((s, i) => s + balanceOwed(i), 0);
+  const overdueAmount = invoices
+    .filter((i) => i.stage === "Overdue")
+    .reduce((s, i) => s + balanceOwed(i), 0);
+  const overdueCount = invoices.filter((i) => i.stage === "Overdue").length;
+  const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
+  const dueCount = invoices.filter(
+    (i) => i.stage !== "Paid" && i.stage !== "Written Off",
+  ).length;
+
+  const currency = invoices[0]?.currency ?? "USD";
+  const canClaim =
+    detail && detail.stage !== "Paid" && detail.stage !== "Written Off";
 
   return (
-    <PortalLayout title="Billing & Payments" subtitle="Manage invoices and make payments">
+    <PortalLayout
+      title="Billing & Invoices"
+      subtitle="View invoices issued to you and update their status"
+    >
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Total Due" value="$3,100" subtitle="2 invoices" icon={DollarSign} variant="warning" />
-          <StatCard title="Paid This Month" value="$2,750" subtitle="2 invoices" icon={CheckCircle2} variant="success" />
-          <StatCard title="Overdue" value="$600" subtitle="1 invoice" icon={Clock} variant="primary" />
-          <StatCard title="Total Paid" value="$12,450" subtitle="All time" icon={CreditCard} />
+          <StatCard
+            title="Total Due"
+            value={money(totalDue, currency)}
+            subtitle={`${dueCount} invoice${dueCount === 1 ? "" : "s"}`}
+            icon={DollarSign}
+            variant="warning"
+          />
+          <StatCard
+            title="Overdue"
+            value={money(overdueAmount, currency)}
+            subtitle={`${overdueCount} invoice${overdueCount === 1 ? "" : "s"}`}
+            icon={Clock}
+            variant="primary"
+          />
+          <StatCard
+            title="Total Paid"
+            value={money(totalPaid, currency)}
+            subtitle="All time"
+            icon={CheckCircle2}
+            variant="success"
+          />
+          <StatCard
+            title="Total Invoices"
+            value={`${invoices.length}`}
+            subtitle="Issued to you"
+            icon={FileText}
+          />
         </div>
+
+        {overdueCount > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            You have {overdueCount} overdue invoice
+            {overdueCount === 1 ? "" : "s"} totalling{" "}
+            {money(overdueAmount, currency)}.
+          </div>
+        )}
 
         <Card className="animate-fade-in">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-heading">Invoices</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
+            {isLoading && (
+              <p className="p-6 text-center text-sm text-muted-foreground">
+                Loading...
+              </p>
+            )}
+            {!isLoading && !invoices.length && (
+              <p className="p-6 text-center text-sm text-muted-foreground">
+                No invoices have been issued to you yet.
+              </p>
+            )}
             <div className="divide-y">
               {invoices.map((inv) => (
-                <div key={inv.id} className="flex items-center gap-4 p-4 hover:bg-accent/30 transition-colors">
+                <button
+                  key={inv._id}
+                  className="w-full flex items-center gap-4 p-4 hover:bg-accent/30 transition-colors text-left"
+                  onClick={() => setDetailId(inv._id)}
+                >
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <DollarSign className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-foreground">{inv.id}</p>
-                      <Badge variant="outline" className={invoiceStatusStyles[inv.status]}>
-                        {inv.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{inv.description} • {inv.date}</p>
-                  </div>
-                  <p className="text-sm font-heading font-bold text-foreground shrink-0">{inv.amount}</p>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    {inv.status !== "Paid" && (
-                      <Button
-                        size="sm"
-                        className="gradient-primary text-primary-foreground text-xs h-8"
-                        onClick={() => handlePay(inv)}
+                      <p className="text-sm font-medium text-foreground">
+                        {inv.ref}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={invoiceStatusStyles[inv.stage]}
                       >
-                        Pay Now
-                      </Button>
+                        {inv.stage}
+                      </Badge>
+                      {!inv.openedByClient && (
+                        <Badge
+                          variant="outline"
+                          className="bg-primary/10 text-primary border-primary/20"
+                        >
+                          New
+                        </Badge>
+                      )}
+                      {inv.clientAction && (
+                        <Badge
+                          variant="outline"
+                          className={
+                            inv.clientAction === "Paid"
+                              ? "bg-success/10 text-success border-success/20"
+                              : "bg-warning/10 text-warning border-warning/20"
+                          }
+                        >
+                          {inv.clientAction === "Paid"
+                            ? "You marked paid"
+                            : "Issue reported"}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {inv.mandateName} • Due{" "}
+                      {new Date(inv.dueOn).toLocaleDateString()}
+                      {inv.stage === "Overdue" &&
+                        ` • ${daysOverdue(inv.dueOn)} days overdue`}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-heading font-bold text-foreground">
+                      {money(inv.payable, inv.currency)}
+                    </p>
+                    {balanceOwed(inv) > 0 && balanceOwed(inv) < inv.payable && (
+                      <p className="text-xs text-muted-foreground">
+                        {money(balanceOwed(inv), inv.currency)} owing
+                      </p>
                     )}
                   </div>
-                </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadMut.mutate({ id: inv._id, ref: inv.ref });
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </button>
               ))}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Payment Dialog */}
-      <Dialog open={payOpen} onOpenChange={setPayOpen}>
-        <DialogContent className="sm:max-w-md">
+      {/* Invoice detail */}
+      <Dialog open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-heading">
-              {paymentDone ? "Payment Successful" : `Pay ${selectedInvoice?.id}`}
-            </DialogTitle>
+            <DialogTitle className="font-heading">{detail?.ref}</DialogTitle>
           </DialogHeader>
-          {!paymentDone ? (
+          {detail && (
             <div className="space-y-4">
-              <div className="rounded-lg border bg-muted/50 p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{selectedInvoice?.description}</p>
-                  <p className="text-xs text-muted-foreground">{selectedInvoice?.id}</p>
+              <div className="flex items-center justify-between">
+                <Badge
+                  variant="outline"
+                  className={invoiceStatusStyles[detail.stage]}
+                >
+                  {detail.stage}
+                </Badge>
+                <p className="text-xs text-muted-foreground">
+                  Due {new Date(detail.dueOn).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div className="rounded-lg border divide-y">
+                {detail.lines.map((l) => (
+                  <div
+                    key={l._id}
+                    className="flex items-center justify-between p-3 text-sm"
+                  >
+                    <div>
+                      <p className="font-medium">{l.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {l.qty} × {money(l.unit, detail.currency)}
+                      </p>
+                    </div>
+                    <p className="font-medium">
+                      {money(l.qty * l.unit, detail.currency)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Net</span>
+                  <span>{money(detail.net, detail.currency)}</span>
                 </div>
-                <p className="text-xl font-heading font-bold text-foreground">{selectedInvoice?.amount}</p>
+                {detail.vat > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      VAT ({detail.vatRate}%)
+                    </span>
+                    <span>{money(detail.vat, detail.currency)}</span>
+                  </div>
+                )}
+                {detail.wht > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      WHT ({detail.whtRate}%)
+                    </span>
+                    <span>-{money(detail.wht, detail.currency)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-1 font-semibold">
+                  <span>Total payable</span>
+                  <span>{money(detail.payable, detail.currency)}</span>
+                </div>
+                {detail.paidAmount > 0 && (
+                  <div className="flex justify-between text-success">
+                    <span>Paid</span>
+                    <span>{money(detail.paidAmount, detail.currency)}</span>
+                  </div>
+                )}
+                {balanceOwed(detail) > 0 && (
+                  <div className="flex justify-between font-semibold text-warning">
+                    <span>Balance owing</span>
+                    <span>{money(balanceOwed(detail), detail.currency)}</span>
+                  </div>
+                )}
               </div>
-              <Tabs defaultValue="card">
-                <TabsList className="w-full">
-                  <TabsTrigger value="card" className="flex-1 gap-1">
-                    <CreditCard className="h-3 w-3" /> Card
-                  </TabsTrigger>
-                  <TabsTrigger value="bank" className="flex-1 gap-1">
-                    <Building className="h-3 w-3" /> Bank
-                  </TabsTrigger>
-                  <TabsTrigger value="mobile" className="flex-1 gap-1">
-                    <Smartphone className="h-3 w-3" /> Mobile
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="card" className="space-y-3 mt-4">
-                  <div>
-                    <Label className="text-xs">Card Number</Label>
-                    <Input placeholder="4242 4242 4242 4242" />
+
+              {/* How to pay — the firm's own real bank details, not a Pay Now button */}
+              {balanceOwed(detail) > 0 &&
+                detail.remittanceAccounts &&
+                detail.remittanceAccounts.length > 0 && (
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                      <Landmark className="h-3.5 w-3.5" /> How to pay
+                    </p>
+                    {detail.remittanceAccounts.map((a) => (
+                      <div key={a._id} className="text-sm">
+                        <p className="font-medium">{a.accountName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {a.bankName} · {a.accountNumber} · {a.currency}
+                          {a.branchCode && ` · Branch ${a.branchCode}`}
+                          {a.swiftCode && ` · SWIFT ${a.swiftCode}`}
+                        </p>
+                      </div>
+                    ))}
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Pay by bank transfer or mobile money to the account above,
+                      then mark this invoice as paid below so the firm can
+                      confirm receipt.
+                    </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Expiry</Label>
-                      <Input placeholder="MM/YY" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">CVC</Label>
-                      <Input placeholder="123" />
-                    </div>
-                  </div>
-                </TabsContent>
-                <TabsContent value="bank" className="space-y-3 mt-4">
-                  <div>
-                    <Label className="text-xs">Account Number</Label>
-                    <Input placeholder="Enter account number" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Routing Number</Label>
-                    <Input placeholder="Enter routing number" />
-                  </div>
-                </TabsContent>
-                <TabsContent value="mobile" className="space-y-3 mt-4">
-                  <div>
-                    <Label className="text-xs">Mobile Money Number</Label>
-                    <Input placeholder="+1 234 567 8900" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Provider</Label>
-                    <Input placeholder="Select provider" />
-                  </div>
-                </TabsContent>
-              </Tabs>
-              <Button
-                className="w-full gradient-primary text-primary-foreground"
-                onClick={() => setPaymentDone(true)}
-              >
-                Pay {selectedInvoice?.amount}
-              </Button>
-            </div>
-          ) : (
-            <div className="py-8 text-center space-y-3">
-              <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="h-8 w-8 text-success" />
+                )}
+
+              {detail.clientAction && (
+                <div
+                  className={`rounded-lg border p-3 text-sm ${detail.clientAction === "Paid" ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"}`}
+                >
+                  <p className="font-medium">
+                    {detail.clientAction === "Paid"
+                      ? "You marked this as paid"
+                      : "You reported an issue"}
+                  </p>
+                  {detail.clientActionNote && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      "{detail.clientActionNote}"
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {detail.clientActionAt &&
+                      new Date(detail.clientActionAt).toLocaleString()}{" "}
+                    — waiting for the firm to confirm
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() =>
+                    downloadMut.mutate({ id: detail._id, ref: detail.ref })
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" /> PDF
+                </Button>
+                {canClaim && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-success"
+                      onClick={() => {
+                        setClaimTarget({ action: "Paid" });
+                        setClaimNote("");
+                      }}
+                    >
+                      <ThumbsUp className="mr-2 h-4 w-4" /> Mark as paid
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-warning"
+                      onClick={() => {
+                        setClaimTarget({ action: "Cancelled" });
+                        setClaimNote("");
+                      }}
+                    >
+                      <Flag className="mr-2 h-4 w-4" /> Report an issue
+                    </Button>
+                  </>
+                )}
               </div>
-              <p className="font-heading font-bold text-lg text-foreground">Payment Complete!</p>
-              <p className="text-sm text-muted-foreground">
-                {selectedInvoice?.amount} paid for {selectedInvoice?.description}
-              </p>
-              <Button variant="outline" onClick={() => setPayOpen(false)}>Close</Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm claim */}
+      <Dialog
+        open={!!claimTarget}
+        onOpenChange={(o) => !o && setClaimTarget(null)}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">
+              {claimTarget?.action === "Paid"
+                ? "Mark as paid?"
+                : "Report an issue"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {claimTarget?.action === "Paid"
+                ? "This tells the firm you've sent payment. They'll confirm receipt on their end once it's verified."
+                : "Let the firm know what's wrong with this invoice — they'll follow up with you."}
+            </p>
+            <Textarea
+              placeholder={
+                claimTarget?.action === "Paid"
+                  ? "Optional note, e.g. payment reference"
+                  : "What's the issue?"
+              }
+              value={claimNote}
+              onChange={(e) => setClaimNote(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClaimTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={claimMut.isPending}
+              onClick={() => claimMut.mutate()}
+            >
+              {claimTarget?.action === "Paid" ? "Confirm paid" : "Send report"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </PortalLayout>

@@ -7,6 +7,7 @@ import Login from "@/pages/Login";
 import EngagementLetter from "@/pages/EngagementLetter";
 import DashboardRouter from "@/DashboardRouter";
 import Documents from "@/pages/Documents";
+import Contracts from "@/pages/Contracts";
 import Payments from "@/pages/Payments";
 import Messages from "@/pages/Messages";
 import KycOnboarding from "@/pages/KYC/KycOnboarding";
@@ -40,6 +41,7 @@ const App = () => (
           {/* ── Shared (all portal types) ───────────────────── */}
           <Route path="/dashboard" element={<DashboardRouter />} />
           <Route path="/documents" element={<Documents />} />
+          <Route path="/contracts" element={<Contracts />} />
           <Route path="/notifications" element={<Notifications />} />
 
           {/* ── KYC client portal ───────────────────────────── */}

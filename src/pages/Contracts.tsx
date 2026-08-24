@@ -1,145 +1,45 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PortalLayout } from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   FileSignature,
   PenLine,
-  Download,
   Eye,
   CheckCircle2,
-  Clock,
-  CalendarDays,
   ShieldCheck,
+  MessageSquare,
+  Loader2,
+  XCircle,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  fetchMyContracts,
+  fetchMyContract,
+  submitContractComment,
+  signContract,
+  declineContract,
+  type Contract,
+} from "@/lib/contract-api";
 
-type ContractStatus = "awaiting_signature" | "signed" | "expired";
-
-interface Contract {
-  id: string;
-  ref: string;
-  title: string;
-  type: string;
-  sentBy: string;
-  sentOn: string;
-  expiresOn: string;
-  status: ContractStatus;
-  signedOn?: string;
-  summary: string;
-  clauses: { heading: string; body: string }[];
-}
-
-const contracts: Contract[] = [
-  {
-    id: "c1",
-    ref: "CTR-2026-014",
-    title: "Engagement Letter — FY2026 Audit",
-    type: "Engagement Letter",
-    sentBy: "Amara Okonkwo",
-    sentOn: "Aug 18, 2026",
-    expiresOn: "Sep 1, 2026",
-    status: "awaiting_signature",
-    summary:
-      "Terms of engagement for the statutory audit of the financial statements for the year ending 31 December 2026.",
-    clauses: [
-      {
-        heading: "1. Scope of Services",
-        body: "We will audit the financial statements in accordance with International Standards on Auditing and report our opinion to the members.",
-      },
-      {
-        heading: "2. Responsibilities",
-        body: "Management is responsible for the preparation of the financial statements and for maintaining adequate internal controls.",
-      },
-      {
-        heading: "3. Fees",
-        body: "Professional fees are based on time spent at our standard hourly rates, invoiced monthly as work progresses.",
-      },
-      {
-        heading: "4. Confidentiality",
-        body: "All information obtained in the course of the engagement will be treated as confidential and used solely for the purpose of the engagement.",
-      },
-    ],
-  },
-  {
-    id: "c2",
-    ref: "CTR-2026-011",
-    title: "Tax Advisory Retainer Agreement",
-    type: "Retainer",
-    sentBy: "Daniel Mugisha",
-    sentOn: "Aug 4, 2026",
-    expiresOn: "Aug 25, 2026",
-    status: "awaiting_signature",
-    summary:
-      "Twelve-month retainer covering corporate tax compliance, filings and ad-hoc advisory support.",
-    clauses: [
-      {
-        heading: "1. Retainer Period",
-        body: "This agreement runs for twelve months from the date of signature and renews by mutual written consent.",
-      },
-      {
-        heading: "2. Included Services",
-        body: "Preparation and submission of statutory tax returns, correspondence with the revenue authority and quarterly advisory calls.",
-      },
-      {
-        heading: "3. Termination",
-        body: "Either party may terminate with thirty days written notice. Fees for work performed remain payable.",
-      },
-    ],
-  },
-  {
-    id: "c3",
-    ref: "CTR-2026-006",
-    title: "Non-Disclosure Agreement",
-    type: "NDA",
-    sentBy: "Amara Okonkwo",
-    sentOn: "Jun 12, 2026",
-    expiresOn: "Jun 30, 2026",
-    status: "signed",
-    signedOn: "Jun 14, 2026",
-    summary:
-      "Mutual non-disclosure covering information exchanged during the advisory relationship.",
-    clauses: [
-      {
-        heading: "1. Confidential Information",
-        body: "Any non-public information disclosed by either party, in any form, is treated as confidential.",
-      },
-      {
-        heading: "2. Duration",
-        body: "Obligations survive for three years following the conclusion of the engagement.",
-      },
-    ],
-  },
-  {
-    id: "c4",
-    ref: "CTR-2025-042",
-    title: "Payroll Outsourcing Addendum",
-    type: "Addendum",
-    sentBy: "Grace Uwase",
-    sentOn: "Nov 2, 2025",
-    expiresOn: "Nov 20, 2025",
-    status: "expired",
-    summary:
-      "Addendum extending the scope of services to monthly payroll processing and filings.",
-    clauses: [
-      {
-        heading: "1. Additional Services",
-        body: "Monthly payroll computation, payslip issuance and statutory deduction filings.",
-      },
-    ],
-  },
-];
+type DisplayStatus = "awaiting_signature" | "signed" | "declined";
 
 const statusMeta: Record<
-  ContractStatus,
+  DisplayStatus,
   { label: string; className: string; icon: React.ReactNode }
 > = {
   awaiting_signature: {
@@ -152,55 +52,127 @@ const statusMeta: Record<
     className: "bg-success/10 text-success border-success/20",
     icon: <CheckCircle2 className="h-3.5 w-3.5" />,
   },
-  expired: {
-    label: "Expired",
-    className: "bg-muted text-muted-foreground border-border",
-    icon: <Clock className="h-3.5 w-3.5" />,
+  declined: {
+    label: "Declined",
+    className: "bg-destructive/10 text-destructive border-destructive/20",
+    icon: <XCircle className="h-3.5 w-3.5" />,
   },
 };
 
+const displayStatusOf = (c: Contract): DisplayStatus => {
+  if (c.signatureStatus === "declined") return "declined";
+  if (c.signatureStatus === "signed" || c.signatureStatus === "countersigned")
+    return "signed";
+  return "awaiting_signature";
+};
+
 export default function Contracts() {
-  const [signedIds, setSignedIds] = useState<string[]>([]);
-  const [viewing, setViewing] = useState<Contract | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: contracts = [], isLoading } = useQuery({
+    queryKey: ["my-contracts"],
+    queryFn: fetchMyContracts,
+  });
+
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const [signing, setSigning] = useState<Contract | null>(null);
+  const [declining, setDeclining] = useState<Contract | null>(null);
   const [fullName, setFullName] = useState("");
   const [agreed, setAgreed] = useState(false);
-  const [done, setDone] = useState(false);
+  const [signDone, setSignDone] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [commentText, setCommentText] = useState("");
 
-  const statusOf = (c: Contract): ContractStatus =>
-    signedIds.includes(c.id) ? "signed" : c.status;
+  const { data: viewing } = useQuery({
+    queryKey: ["my-contract", viewingId],
+    queryFn: () => fetchMyContract(viewingId!),
+    enabled: !!viewingId,
+  });
+
+  const invalidateList = () =>
+    queryClient.invalidateQueries({ queryKey: ["my-contracts"] });
+
+  const commentMutation = useMutation({
+    mutationFn: (message: string) => submitContractComment(viewingId!, message),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["my-contract", viewingId], updated);
+      setCommentText("");
+      toast({ title: "Comment sent" });
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Failed to send comment",
+        description: err?.response?.data?.message,
+        variant: "destructive",
+      }),
+  });
+
+  const signMutation = useMutation({
+    mutationFn: () => signContract(signing!._id, { signerName: fullName }),
+    onSuccess: () => {
+      invalidateList();
+      setSignDone(true);
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Failed to sign",
+        description: err?.response?.data?.message,
+        variant: "destructive",
+      }),
+  });
+
+  const declineMutation = useMutation({
+    mutationFn: () =>
+      declineContract(declining!._id, declineReason || undefined),
+    onSuccess: () => {
+      invalidateList();
+      setDeclining(null);
+      setDeclineReason("");
+      toast({ title: "Response recorded" });
+    },
+    onError: (err: any) =>
+      toast({
+        title: "Failed to decline",
+        description: err?.response?.data?.message,
+        variant: "destructive",
+      }),
+  });
 
   const openSign = (c: Contract) => {
     setSigning(c);
     setFullName("");
     setAgreed(false);
-    setDone(false);
+    setSignDone(false);
   };
 
-  const confirmSign = () => {
-    if (!signing) return;
-    setSignedIds((prev) => [...prev, signing.id]);
-    setDone(true);
-  };
-
-  const pending = contracts.filter((c) => statusOf(c) === "awaiting_signature");
-  const signed = contracts.filter((c) => statusOf(c) === "signed");
+  const pending = contracts.filter(
+    (c) => displayStatusOf(c) === "awaiting_signature",
+  );
+  const signed = contracts.filter((c) => displayStatusOf(c) === "signed");
 
   const renderList = (list: Contract[]) => (
     <Card>
       <CardContent className="p-0">
-        {list.length === 0 ? (
+        {isLoading ? (
+          <p className="p-8 text-center text-sm text-muted-foreground">
+            Loading…
+          </p>
+        ) : list.length === 0 ? (
           <p className="p-8 text-center text-sm text-muted-foreground">
             No contracts here yet.
           </p>
         ) : (
           <div className="divide-y">
             {list.map((c) => {
-              const status = statusOf(c);
+              const status = displayStatusOf(c);
               const meta = statusMeta[status];
+              const sentInteraction = [...c.interactions]
+                .reverse()
+                .find((i) => i.type === "sent" || i.type === "resent");
               return (
                 <div
-                  key={c.id}
+                  key={c._id}
                   className="flex flex-col gap-3 p-4 transition-colors hover:bg-accent/30 sm:flex-row sm:items-center sm:gap-4"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
@@ -214,20 +186,25 @@ export default function Contracts() {
                       <span>{c.ref}</span>
                       <span>•</span>
                       <span>{c.type}</span>
-                      <span>•</span>
-                      <span>Sent {c.sentOn}</span>
-                      {status === "signed" && c.signedOn && (
+                      {sentInteraction && (
                         <>
                           <span>•</span>
-                          <span>Signed {c.signedOn}</span>
+                          <span>
+                            Sent{" "}
+                            {new Date(
+                              sentInteraction.occurredAt,
+                            ).toLocaleDateString()}
+                          </span>
                         </>
                       )}
-                      {status === "awaiting_signature" && (
+                      {status === "signed" && c.signature && (
                         <>
                           <span>•</span>
-                          <span className="inline-flex items-center gap-1 text-warning">
-                            <CalendarDays className="h-3 w-3" /> Expires{" "}
-                            {c.expiresOn}
+                          <span>
+                            Signed{" "}
+                            {new Date(
+                              c.signature.signedAt,
+                            ).toLocaleDateString()}
                           </span>
                         </>
                       )}
@@ -235,28 +212,20 @@ export default function Contracts() {
                   </div>
                   <Badge
                     variant="outline"
-                    className={`${meta.className} shrink-0 gap-1`}
+                    className={`gap-1 ${meta.className}`}
                   >
                     {meta.icon}
-                    <span>{meta.label}</span>
+                    {meta.label}
                   </Badge>
-                  <div className="flex shrink-0 items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground"
-                      onClick={() => setViewing(c)}
                       aria-label={`View ${c.title}`}
+                      onClick={() => setViewingId(c._id)}
                     >
                       <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground"
-                      aria-label={`Download ${c.title}`}
-                    >
-                      <Download className="h-4 w-4" />
                     </Button>
                     {status === "awaiting_signature" && (
                       <Button
@@ -280,7 +249,7 @@ export default function Contracts() {
   return (
     <PortalLayout
       title="Contracts"
-      subtitle="Review and electronically sign contracts sent to you"
+      subtitle="Review, sign, and leave feedback on contracts sent to you"
     >
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-3">
@@ -340,50 +309,136 @@ export default function Contracts() {
         </Tabs>
       </div>
 
-      {/* Viewer */}
-      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+      {/* Viewer — includes real discussion/comments */}
+      <Dialog open={!!viewingId} onOpenChange={(o) => !o && setViewingId(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-heading">{viewing?.title}</DialogTitle>
           </DialogHeader>
-          {viewing && (
+          {viewing ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <Badge variant="outline">{viewing.ref}</Badge>
-                <span>Sent by {viewing.sentBy}</span>
-                <span>•</span>
-                <span>{viewing.sentOn}</span>
+                <span>{viewing.type}</span>
               </div>
-              <p className="text-sm text-muted-foreground">{viewing.summary}</p>
-              <div className="max-h-[45vh] space-y-4 overflow-y-auto rounded-lg border bg-muted/40 p-4">
-                {viewing.clauses.map((cl) => (
-                  <div key={cl.heading} className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground">
-                      {cl.heading}
-                    </p>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {cl.body}
-                    </p>
-                  </div>
-                ))}
-              </div>
+
+              {viewing.signatureStatus === "declined" && (
+                <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                  <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                  <p>
+                    You declined this document.
+                    {viewing.declineReason &&
+                      ` Reason: ${viewing.declineReason}`}
+                  </p>
+                </div>
+              )}
+              {(viewing.signatureStatus === "signed" ||
+                viewing.signatureStatus === "countersigned") && (
+                <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/5 p-3 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                  <p>
+                    Signed on{" "}
+                    {new Date(viewing.signature!.signedAt).toLocaleString()}.{" "}
+                    {viewing.signatureStatus === "countersigned"
+                      ? "Fully executed."
+                      : "Waiting on the firm's countersignature."}
+                  </p>
+                </div>
+              )}
+
+              <div
+                className="max-h-[40vh] space-y-4 overflow-y-auto rounded-lg border bg-muted/40 p-4 text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: viewing.renderedBody }}
+              />
+
+              {viewing.interactions.some(
+                (i) => i.type === "comment" || i.type === "tenant_response",
+              ) && (
+                <div className="space-y-3 rounded-lg border p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Discussion
+                  </p>
+                  {viewing.interactions
+                    .filter(
+                      (i) =>
+                        i.type === "comment" || i.type === "tenant_response",
+                    )
+                    .map((i, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs font-medium">
+                            {i.actor === "signer" ? "You" : "Firm"} ·{" "}
+                            <span className="text-muted-foreground">
+                              {new Date(i.occurredAt).toLocaleDateString()}
+                            </span>
+                          </p>
+                          <p className="text-sm">{i.message}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+
+              {viewing.signatureStatus === "sent" && (
+                <div className="space-y-2">
+                  <Label className="text-xs">
+                    Have a question or want to suggest a change?
+                  </Label>
+                  <Textarea
+                    rows={3}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Leave a comment…"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!commentText.trim() || commentMutation.isPending}
+                    onClick={() => commentMutation.mutate(commentText)}
+                  >
+                    {commentMutation.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      "Send comment"
+                    )}
+                  </Button>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setViewing(null)}>
+                <Button variant="outline" onClick={() => setViewingId(null)}>
                   Close
                 </Button>
-                {statusOf(viewing) === "awaiting_signature" && (
-                  <Button
-                    className="gradient-primary text-primary-foreground"
-                    onClick={() => {
-                      const c = viewing;
-                      setViewing(null);
-                      openSign(c);
-                    }}
-                  >
-                    <PenLine className="mr-2 h-4 w-4" /> Sign Contract
-                  </Button>
+                {viewing.signatureStatus === "sent" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="text-destructive"
+                      onClick={() => {
+                        setDeclining(viewing);
+                        setViewingId(null);
+                      }}
+                    >
+                      Decline
+                    </Button>
+                    <Button
+                      className="gradient-primary text-primary-foreground"
+                      onClick={() => {
+                        const c = viewing;
+                        setViewingId(null);
+                        openSign(c);
+                      }}
+                    >
+                      <PenLine className="mr-2 h-4 w-4" /> Sign Contract
+                    </Button>
+                  </>
                 )}
               </div>
+            </div>
+          ) : (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           )}
         </DialogContent>
@@ -395,13 +450,13 @@ export default function Contracts() {
           <DialogHeader>
             <DialogTitle className="font-heading">Sign Contract</DialogTitle>
           </DialogHeader>
-          {signing && !done ? (
+          {signing && !signDone ? (
             <div className="space-y-6">
               <div className="rounded-lg border bg-muted/50 p-6 text-center">
                 <FileSignature className="mx-auto mb-3 h-12 w-12 text-primary" />
                 <p className="font-medium text-foreground">{signing.title}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {signing.ref} • Expires {signing.expiresOn}
+                  {signing.ref}
                 </p>
               </div>
               <div className="space-y-3">
@@ -438,10 +493,19 @@ export default function Contracts() {
               </div>
               <Button
                 className="w-full gradient-primary text-primary-foreground"
-                disabled={fullName.trim().length < 3 || !agreed}
-                onClick={confirmSign}
+                disabled={
+                  fullName.trim().length < 3 ||
+                  !agreed ||
+                  signMutation.isPending
+                }
+                onClick={() => signMutation.mutate()}
               >
-                <PenLine className="mr-2 h-4 w-4" /> Sign Contract
+                {signMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <PenLine className="mr-2 h-4 w-4" />
+                )}
+                Sign Contract
               </Button>
               <p className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
                 <ShieldCheck className="h-3 w-3" /> Signature timestamped and
@@ -457,14 +521,49 @@ export default function Contracts() {
                 Contract Signed
               </p>
               <p className="text-sm text-muted-foreground">
-                {signing?.title} has been signed and a copy is available for
-                download.
+                {signing?.title} has been signed.
               </p>
               <Button variant="outline" onClick={() => setSigning(null)}>
                 Close
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Decline dialog */}
+      <Dialog open={!!declining} onOpenChange={(o) => !o && setDeclining(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-heading">
+              Decline this contract?
+            </DialogTitle>
+            <DialogDescription>The firm will be notified.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label>Reason (optional)</Label>
+            <Textarea
+              rows={3}
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeclining(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={declineMutation.isPending}
+              onClick={() => declineMutation.mutate()}
+            >
+              {declineMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Decline"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </PortalLayout>

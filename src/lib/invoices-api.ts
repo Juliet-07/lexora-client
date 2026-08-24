@@ -65,6 +65,11 @@ export interface ClientInvoice {
   clientAction: ClientInvoiceAction | null;
   clientActionAt: string | null;
   clientActionNote: string | null;
+  // Real proof-of-payment the client attached when marking Paid —
+  // a receipt or transfer confirmation the firm can actually open,
+  // not just the claim in words.
+  proofOfPaymentUrl: string | null;
+  proofOfPaymentFileName: string | null;
 }
 
 export const fetchMyInvoices = (): Promise<ClientInvoice[]> =>
@@ -95,12 +100,23 @@ export const downloadMyInvoicePdf = async (
 // Marks the invoice from the client's own side — a claim the firm
 // sees and acts on, never something that settles the invoice by
 // itself. The firm's own confirmation is the real payment event.
+// proofOfPayment is optional — a receipt or transfer screenshot the
+// client can attach so the firm has something real to check against,
+// not just the claim in words.
 export const markInvoiceStatus = (
   id: string,
   action: ClientInvoiceAction,
   note?: string,
-): Promise<ClientInvoice> =>
-  http.post(`/crm/client-invoices/${id}/status`, { action, note });
+  proofOfPayment?: File,
+): Promise<ClientInvoice> => {
+  const form = new FormData();
+  form.append("action", action);
+  if (note) form.append("note", note);
+  if (proofOfPayment) form.append("proofOfPayment", proofOfPayment);
+  // No explicit Content-Type — axios detects a FormData body and
+  // sets the correct multipart boundary header itself.
+  return http.post(`/crm/client-invoices/${id}/status`, form);
+};
 
 // A balance still owed — used to decide whether to show the
 // outstanding badge, not to imply a payment can be made here.

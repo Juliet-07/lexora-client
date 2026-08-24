@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -79,18 +80,21 @@ export default function Payments() {
     action: ClientInvoiceAction;
   } | null>(null);
   const [claimNote, setClaimNote] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const claimMut = useMutation({
     mutationFn: () =>
       markInvoiceStatus(
         detail!._id,
         claimTarget!.action,
         claimNote || undefined,
+        claimTarget?.action === "Paid" ? (proofFile ?? undefined) : undefined,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myInvoice", detailId] });
       queryClient.invalidateQueries({ queryKey: ["myInvoices"] });
       setClaimTarget(null);
       setClaimNote("");
+      setProofFile(null);
       toast({
         title:
           claimTarget?.action === "Paid" ? "Marked as paid" : "Issue reported",
@@ -379,6 +383,17 @@ export default function Payments() {
                       "{detail.clientActionNote}"
                     </p>
                   )}
+                  {detail.proofOfPaymentUrl && (
+                    <a
+                      href={detail.proofOfPaymentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-primary underline"
+                    >
+                      <FileText className="h-3 w-3" />
+                      {detail.proofOfPaymentFileName || "View proof of payment"}
+                    </a>
+                  )}
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {detail.clientActionAt &&
                       new Date(detail.clientActionAt).toLocaleString()}{" "}
@@ -405,6 +420,7 @@ export default function Payments() {
                       onClick={() => {
                         setClaimTarget({ action: "Paid" });
                         setClaimNote("");
+                        setProofFile(null);
                       }}
                     >
                       <ThumbsUp className="mr-2 h-4 w-4" /> Mark as paid
@@ -415,6 +431,7 @@ export default function Payments() {
                       onClick={() => {
                         setClaimTarget({ action: "Cancelled" });
                         setClaimNote("");
+                        setProofFile(null);
                       }}
                     >
                       <Flag className="mr-2 h-4 w-4" /> Report an issue
@@ -456,6 +473,28 @@ export default function Payments() {
               onChange={(e) => setClaimNote(e.target.value)}
               rows={3}
             />
+            {claimTarget?.action === "Paid" && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  Proof of payment (optional)
+                </label>
+                <Input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                  onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  A receipt or transfer confirmation helps the firm verify
+                  faster. PDF or image, up to 10MB.
+                </p>
+                {proofFile && (
+                  <p className="text-xs text-muted-foreground">
+                    {proofFile.name} ·{" "}
+                    {(proofFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setClaimTarget(null)}>

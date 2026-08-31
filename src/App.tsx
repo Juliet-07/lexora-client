@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "@/pages/Login";
-import EngagementLetter from "@/pages/EngagementLetter";
 import DashboardRouter from "@/DashboardRouter";
 import Documents from "@/pages/Documents";
 import Contracts from "@/pages/Contracts";
@@ -33,10 +32,6 @@ const App = () => (
         <Routes>
           {/* ── Public ──────────────────────────────────────── */}
           <Route path="/login" element={<Login />} />
-          <Route
-            path="/engagement-letter/:token"
-            element={<EngagementLetter />}
-          />
 
           {/* ── Shared (all portal types) ───────────────────── */}
           <Route path="/dashboard" element={<DashboardRouter />} />

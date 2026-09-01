@@ -22,6 +22,7 @@ import ServiceDesk from "@/pages/ServiceDesk";
 import NotFound from "@/pages/NotFound";
 import { boardRoutes } from "@/routes/board.routes";
 import { clientClientRoutes } from "@/routes/client.routes";
+import SignContractPage from "./pages/SignContractPage";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/sign-contract/:token" element={<SignContractPage />} />
 
           {/* ── Shared (all portal types) ───────────────────── */}
           <Route path="/dashboard" element={<DashboardRouter />} />

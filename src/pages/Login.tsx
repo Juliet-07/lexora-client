@@ -136,6 +136,7 @@ export default function Login() {
                   <Label htmlFor="password">Password</Label>
                   <button
                     type="button"
+                    onClick={() => navigate("/forgot-password")}
                     className="text-xs text-primary hover:underline"
                   >
                     Forgot password?

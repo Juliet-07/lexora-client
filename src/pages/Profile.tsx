@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/lib/api";
-import { User, Mail, Phone, Shield, Save, Loader2 } from "lucide-react";
+import { User, Mail, Phone, Shield, Save, Loader2, Lock, KeyRound, Eye, EyeOff } from "lucide-react";
 
 export default function Profile() {
   const { data: user, isLoading, refetch } = useCurrentUser();

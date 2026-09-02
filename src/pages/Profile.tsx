@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/lib/api";
-import { User, Mail, Phone, Shield, Save, Loader2 } from "lucide-react";
+import { User, Mail, Phone, Shield, Save, Loader2, Lock, KeyRound, Eye, EyeOff } from "lucide-react";
 
 export default function Profile() {
   const { data: user, isLoading, refetch } = useCurrentUser();
@@ -20,6 +20,12 @@ export default function Profile() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -51,6 +57,58 @@ export default function Profile() {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in your current and new password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "New password must be at least 8 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "Passwords do not match",
+        description: "Please re-enter your new password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await api.post("/auth/change-password", {
+        currentPassword,
+        newPassword,
+        confirmPassword: confirmNewPassword,
+      });
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully.",
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (err: any) {
+      toast({
+        title: "Could not change password",
+        description:
+          err?.response?.data?.message ??
+          "Please check your current password and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -147,6 +205,81 @@ export default function Profile() {
                   <Save className="h-4 w-4 mr-1" />
                 )}
                 {isSaving ? "Saving…" : "Save Changes"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Change password */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-heading flex items-center gap-2">
+              <KeyRound className="h-4 w-4" /> Change Password
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="currentPassword">Current password</Label>
+                <Input
+                  id="currentPassword"
+                  type={showPasswords ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="hidden sm:block" />
+              <div className="space-y-1.5">
+                <Label htmlFor="newPassword">New password</Label>
+                <Input
+                  id="newPassword"
+                  type={showPasswords ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirmNewPassword">Confirm new password</Label>
+                <Input
+                  id="confirmNewPassword"
+                  type={showPasswords ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowPasswords((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              {showPasswords ? (
+                <EyeOff className="h-3.5 w-3.5" />
+              ) : (
+                <Eye className="h-3.5 w-3.5" />
+              )}
+              {showPasswords ? "Hide passwords" : "Show passwords"}
+            </button>
+
+            <Separator />
+
+            <div className="flex justify-end">
+              <Button
+                onClick={handleChangePassword}
+                disabled={isChangingPassword}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary/10"
+              >
+                {isChangingPassword ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Lock className="h-4 w-4 mr-1" />
+                )}
+                {isChangingPassword ? "Updating…" : "Update Password"}
               </Button>
             </div>
           </CardContent>

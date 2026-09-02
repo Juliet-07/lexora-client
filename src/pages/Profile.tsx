@@ -60,6 +60,58 @@ export default function Profile() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in your current and new password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "New password must be at least 8 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "Passwords do not match",
+        description: "Please re-enter your new password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await api.post("/auth/change-password", {
+        currentPassword,
+        newPassword,
+        confirmPassword: confirmNewPassword,
+      });
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully.",
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (err: any) {
+      toast({
+        title: "Could not change password",
+        description:
+          err?.response?.data?.message ??
+          "Please check your current password and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   return (
     <PortalLayout
       title="My Profile"

@@ -10,7 +10,18 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { api } from "@/lib/api";
-import { User, Mail, Phone, Shield, Save, Loader2, Lock, KeyRound, Eye, EyeOff } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Shield,
+  Save,
+  Loader2,
+  Lock,
+  KeyRound,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
 export default function Profile() {
   const { data: user, isLoading, refetch } = useCurrentUser();
@@ -42,7 +53,7 @@ export default function Profile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await api.patch("/auth/me", { firstName, lastName, phone });
+      await api.patch("/auth/profile", { firstName, lastName, phone });
       toast({
         title: "Profile updated",
         description: "Your changes have been saved.",
@@ -87,7 +98,7 @@ export default function Profile() {
     }
     setIsChangingPassword(true);
     try {
-      await api.post("/auth/change-password", {
+      await api.patch("/auth/change-password", {
         currentPassword,
         newPassword,
         confirmPassword: confirmNewPassword,

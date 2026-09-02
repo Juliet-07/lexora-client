@@ -210,6 +210,81 @@ export default function Profile() {
           </CardContent>
         </Card>
 
+        {/* Change password */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-heading flex items-center gap-2">
+              <KeyRound className="h-4 w-4" /> Change Password
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="currentPassword">Current password</Label>
+                <Input
+                  id="currentPassword"
+                  type={showPasswords ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="hidden sm:block" />
+              <div className="space-y-1.5">
+                <Label htmlFor="newPassword">New password</Label>
+                <Input
+                  id="newPassword"
+                  type={showPasswords ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirmNewPassword">Confirm new password</Label>
+                <Input
+                  id="confirmNewPassword"
+                  type={showPasswords ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowPasswords((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              {showPasswords ? (
+                <EyeOff className="h-3.5 w-3.5" />
+              ) : (
+                <Eye className="h-3.5 w-3.5" />
+              )}
+              {showPasswords ? "Hide passwords" : "Show passwords"}
+            </button>
+
+            <Separator />
+
+            <div className="flex justify-end">
+              <Button
+                onClick={handleChangePassword}
+                disabled={isChangingPassword}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary/10"
+              >
+                {isChangingPassword ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Lock className="h-4 w-4 mr-1" />
+                )}
+                {isChangingPassword ? "Updating…" : "Update Password"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Account info */}
         <Card>
           <CardHeader>

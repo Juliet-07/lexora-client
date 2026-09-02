@@ -21,6 +21,12 @@ export default function Profile() {
   const [phone, setPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showPasswords, setShowPasswords] = useState(false);
+
   useEffect(() => {
     if (user) {
       setFirstName(user.firstName ?? "");

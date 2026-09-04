@@ -7,7 +7,7 @@ import Login from "@/pages/Login";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import DashboardRouter from "@/DashboardRouter";
-import Documents from "@/pages/Documents";
+// import Documents from "@/pages/Documents";
 import Contracts from "@/pages/Contracts";
 import Payments from "@/pages/Payments";
 import Messages from "@/pages/Messages";
@@ -41,7 +41,7 @@ const App = () => (
 
           {/* ── Shared (all portal types) ───────────────────── */}
           <Route path="/dashboard" element={<DashboardRouter />} />
-          <Route path="/documents" element={<Documents />} />
+          {/* <Route path="/documents" element={<Documents />} /> */}
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/notifications" element={<Notifications />} />
 

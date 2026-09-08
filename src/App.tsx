@@ -23,6 +23,7 @@ import NotFound from "@/pages/NotFound";
 import { boardRoutes } from "@/routes/board.routes";
 import { clientClientRoutes } from "@/routes/client.routes";
 import SignContractPage from "./pages/SignContractPage";
+import KycUpdate from "./pages/KYC/KycUpdate";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/payments" element={<Payments />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/onboarding" element={<KycOnboarding />} />
+          <Route path="/kyc-update" element={<KycUpdate />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/projects" element={<Projects />} />

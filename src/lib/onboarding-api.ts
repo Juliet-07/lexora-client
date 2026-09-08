@@ -1,5 +1,4 @@
-import { http } from "@/lib/api";
-import { api } from "@/lib/api";
+import { api, http } from "@/lib/api";
 
 // ── Types ─────────────────────────────────────────────────────
 

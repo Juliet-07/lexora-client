@@ -17,8 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2, XCircle, UploadCloud } from "lucide-react";
-import { uploadDocument } from "@/pages/KYC/onboardingApi";
-import type { DocumentAttachment } from "@/pages/KYC/onboardingApi";
+import { uploadDocument } from "@/lib/onboarding-api";
+import type { DocumentAttachment } from "@/lib/onboarding-api";
 
 interface Props {
   label: string;

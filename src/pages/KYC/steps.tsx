@@ -35,7 +35,7 @@ import {
   type RelatedEntity,
 } from "./data";
 import type { ClientClassification } from "@/lib/profile";
-import { DocumentAttachment, uploadDocument } from "./onboardingApi";
+import { DocumentAttachment, uploadDocument } from "../../lib/onboarding-api";
 
 // ─────────────────────────────────────────────────────────────
 // SHARED TYPES

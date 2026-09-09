@@ -90,11 +90,13 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
-        <div className="text-center space-y-2">
-          <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
-            <span className="text-xl font-bold text-primary-foreground">
-              CP
-            </span>
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-16 w-16 rounded-2xl bg-white flex items-center justify-center shadow-lg p-2">
+            <img
+              src="/lexora-logo.png"
+              alt="Lexora logo"
+              className="h-full w-full object-contain"
+            />
           </div>
           <h1 className="text-2xl font-heading font-bold text-foreground">
             Welcome Back

@@ -18,6 +18,7 @@ import {
   Users,
   BarChart3,
   LifeBuoy,
+  Scale,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +45,7 @@ const kycClientItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Onboarding", url: "/onboarding", icon: CheckSquare },
   { title: "Projects", url: "/projects", icon: Target },
+  { title: "Cases", url: "/cases", icon: Scale },
   { title: "Contracts", url: "/contracts", icon: FileSignature },
   { title: "Alerts", url: "/alerts", icon: AlertTriangle },
   { title: "Payments", url: "/payments", icon: CreditCard },

@@ -24,6 +24,8 @@ import { boardRoutes } from "@/routes/board.routes";
 import { clientClientRoutes } from "@/routes/client.routes";
 import SignContractPage from "./pages/SignContractPage";
 import KycUpdate from "./pages/KYC/KycUpdate";
+import Cases from "./pages/Cases/Cases";
+import CaseDetail from "./pages/Cases/CaseDetail";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,8 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="/cases" element={<Cases />} />
+          <Route path="/cases/:type/:id" element={<CaseDetail />} />
           <Route path="/newsletters" element={<Newsletters />} />
           <Route path="/service-desk" element={<ServiceDesk />} />
 

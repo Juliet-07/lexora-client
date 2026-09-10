@@ -77,3 +77,23 @@ export const fetchMyCase = (
   caseType: "adr" | "litigation",
   id: string,
 ): Promise<MyCase> => http.get(`/crm/client-cases/${caseType}/${id}`);
+
+// ── Communication — ADR only for now ──
+export interface CaseMessage {
+  _id: string;
+  caseId: string;
+  direction: "tenant" | "client";
+  author: string;
+  body: string;
+  createdAt: string;
+}
+
+export const fetchCaseMessages = (id: string): Promise<CaseMessage[]> =>
+  http.get(`/crm/client-cases/adr/${id}/messages`);
+
+export const sendCaseMessage = (
+  id: string,
+  author: string,
+  body: string,
+): Promise<CaseMessage> =>
+  http.post(`/crm/client-cases/adr/${id}/messages`, { author, body });

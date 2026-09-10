@@ -1,9 +1,11 @@
 import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PortalLayout } from "@/components/PortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
@@ -12,8 +14,14 @@ import {
   Gavel,
   Handshake,
   CheckCircle2,
+  Send,
 } from "lucide-react";
-import { fetchMyCase } from "@/lib/cases-api";
+import {
+  fetchMyCase,
+  fetchCaseMessages,
+  sendCaseMessage,
+} from "@/lib/cases-api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const money = (n: number, c = "USD") =>
   n.toLocaleString(undefined, { style: "currency", currency: c });
@@ -121,6 +129,7 @@ export default function CaseDetail() {
               {isAdr ? "Sessions" : "Court Dates"}
             </TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            {isAdr && <TabsTrigger value="messages">Messages</TabsTrigger>}
           </TabsList>
 
           {/* ── Overview ── */}
@@ -321,8 +330,83 @@ export default function CaseDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+          {isAdr && (
+            <TabsContent value="messages" className="mt-4">
+              <CaseMessagesTab caseId={c._id} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </PortalLayout>
+  );
+}
+
+function CaseMessagesTab({ caseId }: { caseId: string }) {
+  const { data: user } = useCurrentUser();
+  const queryClient = useQueryClient();
+  const { data: messages = [] } = useQuery({
+    queryKey: ["caseMessages", caseId],
+    queryFn: () => fetchCaseMessages(caseId),
+  });
+  const [text, setText] = useState("");
+
+  const sendMut = useMutation({
+    mutationFn: () =>
+      sendCaseMessage(caseId, user?.firstName ?? "You", text.trim()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["caseMessages", caseId] });
+      setText("");
+    },
+  });
+
+  return (
+    <Card>
+      <CardContent className="space-y-3 p-5">
+        <div className="max-h-96 space-y-3 overflow-y-auto">
+          {!messages.length && (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No messages yet — send one below to reach your advisor.
+            </p>
+          )}
+          {messages.map((m) => (
+            <div
+              key={m._id}
+              className={`flex ${m.direction === "client" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+                  m.direction === "client"
+                    ? "gradient-primary text-primary-foreground"
+                    : "bg-muted"
+                }`}
+              >
+                <p className="mb-0.5 text-[11px] font-medium opacity-80">
+                  {m.author}
+                </p>
+                <p>{m.body}</p>
+                <p className="mt-1 text-[10px] opacity-70">
+                  {new Date(m.createdAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Textarea
+            placeholder="Write a message to your advisor…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="min-h-[60px]"
+          />
+          <Button
+            disabled={sendMut.isPending || !text.trim()}
+            onClick={() => sendMut.mutate()}
+            className="gradient-primary self-end text-primary-foreground"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

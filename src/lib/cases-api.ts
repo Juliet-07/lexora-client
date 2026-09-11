@@ -89,15 +89,28 @@ export interface CaseMessage {
   createdAt: string;
 }
 
-export const fetchCaseMessages = (id: string): Promise<CaseMessage[]> =>
-  http.get(`/crm/client-cases/adr/${id}/messages`);
+export const fetchCaseMessages = (
+  id: string,
+  caseType: CaseType = "ADR",
+): Promise<CaseMessage[]> =>
+  http.get(`/crm/client-cases/${caseType.toLowerCase()}/${id}/messages`);
 
 export const sendCaseMessage = (
   id: string,
   author: string,
   body: string,
+  caseType: CaseType = "ADR",
 ): Promise<CaseMessage> =>
-  http.post(`/crm/client-cases/adr/${id}/messages`, { author, body });
+  http.post(`/crm/client-cases/${caseType.toLowerCase()}/${id}/messages`, {
+    author,
+    body,
+  });
 
-export const markCaseMessagesRead = (id: string): Promise<void> =>
-  http.post(`/crm/client-cases/adr/${id}/messages/read`, {});
+export const markCaseMessagesRead = (
+  id: string,
+  caseType: CaseType = "ADR",
+): Promise<void> =>
+  http.post(
+    `/crm/client-cases/${caseType.toLowerCase()}/${id}/messages/read`,
+    {},
+  );

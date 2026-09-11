@@ -21,6 +21,7 @@ import {
   fetchCaseMessages,
   sendCaseMessage,
   markCaseMessagesRead,
+  type CaseType,
 } from "@/lib/cases-api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
@@ -126,8 +127,8 @@ export default function CaseDetail() {
         <Tabs
           defaultValue="overview"
           onValueChange={(v) => {
-            if (v === "messages" && isAdr) {
-              markCaseMessagesRead(c._id).then(() =>
+            if (v === "messages") {
+              markCaseMessagesRead(c._id, c.caseType).then(() =>
                 queryClient.invalidateQueries({ queryKey: ["myCases"] }),
               );
             }
@@ -140,7 +141,7 @@ export default function CaseDetail() {
               {isAdr ? "Sessions" : "Court Dates"}
             </TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            {isAdr && <TabsTrigger value="messages">Messages</TabsTrigger>}
+            <TabsTrigger value="messages">Messages</TabsTrigger>
           </TabsList>
 
           {/* ── Overview ── */}
@@ -341,31 +342,37 @@ export default function CaseDetail() {
               </CardContent>
             </Card>
           </TabsContent>
-          {isAdr && (
-            <TabsContent value="messages" className="mt-4">
-              <CaseMessagesTab caseId={c._id} />
-            </TabsContent>
-          )}
+          <TabsContent value="messages" className="mt-4">
+            <CaseMessagesTab caseId={c._id} caseType={c.caseType} />
+          </TabsContent>
         </Tabs>
       </div>
     </PortalLayout>
   );
 }
 
-function CaseMessagesTab({ caseId }: { caseId: string }) {
+function CaseMessagesTab({
+  caseId,
+  caseType,
+}: {
+  caseId: string;
+  caseType: CaseType;
+}) {
   const { data: user } = useCurrentUser();
   const queryClient = useQueryClient();
   const { data: messages = [] } = useQuery({
-    queryKey: ["caseMessages", caseId],
-    queryFn: () => fetchCaseMessages(caseId),
+    queryKey: ["caseMessages", caseId, caseType],
+    queryFn: () => fetchCaseMessages(caseId, caseType),
   });
   const [text, setText] = useState("");
 
   const sendMut = useMutation({
     mutationFn: () =>
-      sendCaseMessage(caseId, user?.firstName ?? "You", text.trim()),
+      sendCaseMessage(caseId, user?.firstName ?? "You", text.trim(), caseType),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["caseMessages", caseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["caseMessages", caseId, caseType],
+      });
       setText("");
     },
   });

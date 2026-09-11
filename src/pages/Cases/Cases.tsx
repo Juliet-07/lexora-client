@@ -94,12 +94,19 @@ export default function Cases() {
                       Mandate: {c.mandateName}
                     </p>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className={statusTone[c.status] ?? "border-border"}
-                  >
-                    {c.status}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <Badge
+                      variant="outline"
+                      className={statusTone[c.status] ?? "border-border"}
+                    >
+                      {c.status}
+                    </Badge>
+                    {c.unreadMessages > 0 && (
+                      <Badge className="gradient-primary text-primary-foreground">
+                        {c.unreadMessages} new
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">

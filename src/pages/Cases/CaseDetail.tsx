@@ -20,6 +20,7 @@ import {
   fetchMyCase,
   fetchCaseMessages,
   sendCaseMessage,
+  markCaseMessagesRead,
 } from "@/lib/cases-api";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
@@ -29,6 +30,7 @@ const money = (n: number, c = "USD") =>
 export default function CaseDetail() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const caseType = type === "litigation" ? "litigation" : "adr";
+  const queryClient = useQueryClient();
 
   const {
     data: c,
@@ -121,7 +123,16 @@ export default function CaseDetail() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="overview">
+        <Tabs
+          defaultValue="overview"
+          onValueChange={(v) => {
+            if (v === "messages" && isAdr) {
+              markCaseMessagesRead(c._id).then(() =>
+                queryClient.invalidateQueries({ queryKey: ["myCases"] }),
+              );
+            }
+          }}
+        >
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="parties">Parties</TabsTrigger>

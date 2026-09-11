@@ -41,6 +41,7 @@ export interface MyCase {
   caseType: CaseType;
   ref: string;
   title: string;
+  unreadMessages: number;
   type?: string; // ADR type: Mediation | Arbitration | Negotiation | Conciliation
   mandateName: string;
   stage: string;
@@ -97,3 +98,6 @@ export const sendCaseMessage = (
   body: string,
 ): Promise<CaseMessage> =>
   http.post(`/crm/client-cases/adr/${id}/messages`, { author, body });
+
+export const markCaseMessagesRead = (id: string): Promise<void> =>
+  http.post(`/crm/client-cases/adr/${id}/messages/read`, {});

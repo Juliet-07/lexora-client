@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -126,6 +127,81 @@ export default function Payments() {
   const canClaim =
     detail && detail.stage !== "Paid" && detail.stage !== "Written Off";
 
+  // A paid invoice is a receipt from here on — this is the whole
+  // Invoices/Receipts split, driven by the same stage field the
+  // rest of the page already reads, so marking one paid moves it
+  // automatically on the next render.
+  const openInvoices = invoices.filter((i) => i.stage !== "Paid");
+  const paidInvoices = invoices.filter((i) => i.stage === "Paid");
+
+  const renderInvoiceRow = (inv: ClientInvoice) => (
+    <button
+      key={inv._id}
+      className="w-full flex items-center gap-4 p-4 hover:bg-accent/30 transition-colors text-left"
+      onClick={() => setDetailId(inv._id)}
+    >
+      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <DollarSign className="h-5 w-5 text-primary" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-foreground">{inv.ref}</p>
+          <Badge variant="outline" className={invoiceStatusStyles[inv.stage]}>
+            {inv.stage}
+          </Badge>
+          {!inv.openedByClient && (
+            <Badge
+              variant="outline"
+              className="bg-primary/10 text-primary border-primary/20"
+            >
+              New
+            </Badge>
+          )}
+          {inv.clientAction && (
+            <Badge
+              variant="outline"
+              className={
+                inv.clientAction === "Paid"
+                  ? "bg-success/10 text-success border-success/20"
+                  : "bg-warning/10 text-warning border-warning/20"
+              }
+            >
+              {inv.clientAction === "Paid"
+                ? "You marked paid"
+                : "Issue reported"}
+            </Badge>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {inv.mandateName} • Due {new Date(inv.dueOn).toLocaleDateString()}
+          {inv.stage === "Overdue" &&
+            ` • ${daysOverdue(inv.dueOn)} days overdue`}
+        </p>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="text-sm font-heading font-bold text-foreground">
+          {money(inv.payable, inv.currency)}
+        </p>
+        {balanceOwed(inv) > 0 && balanceOwed(inv) < inv.payable && (
+          <p className="text-xs text-muted-foreground">
+            {money(balanceOwed(inv), inv.currency)} owing
+          </p>
+        )}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          downloadMut.mutate({ id: inv._id, ref: inv.ref });
+        }}
+      >
+        <Download className="h-4 w-4" />
+      </Button>
+    </button>
+  );
+
   return (
     <PortalLayout
       title="Billing & Invoices"
@@ -171,98 +247,70 @@ export default function Payments() {
           </div>
         )}
 
-        <Card className="animate-fade-in">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-heading">Invoices</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading && (
-              <p className="p-6 text-center text-sm text-muted-foreground">
-                Loading...
-              </p>
-            )}
-            {!isLoading && !invoices.length && (
-              <p className="p-6 text-center text-sm text-muted-foreground">
-                No invoices have been issued to you yet.
-              </p>
-            )}
-            <div className="divide-y">
-              {invoices.map((inv) => (
-                <button
-                  key={inv._id}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-accent/30 transition-colors text-left"
-                  onClick={() => setDetailId(inv._id)}
-                >
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <DollarSign className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-foreground">
-                        {inv.ref}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className={invoiceStatusStyles[inv.stage]}
-                      >
-                        {inv.stage}
-                      </Badge>
-                      {!inv.openedByClient && (
-                        <Badge
-                          variant="outline"
-                          className="bg-primary/10 text-primary border-primary/20"
-                        >
-                          New
-                        </Badge>
-                      )}
-                      {inv.clientAction && (
-                        <Badge
-                          variant="outline"
-                          className={
-                            inv.clientAction === "Paid"
-                              ? "bg-success/10 text-success border-success/20"
-                              : "bg-warning/10 text-warning border-warning/20"
-                          }
-                        >
-                          {inv.clientAction === "Paid"
-                            ? "You marked paid"
-                            : "Issue reported"}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {inv.mandateName} • Due{" "}
-                      {new Date(inv.dueOn).toLocaleDateString()}
-                      {inv.stage === "Overdue" &&
-                        ` • ${daysOverdue(inv.dueOn)} days overdue`}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-heading font-bold text-foreground">
-                      {money(inv.payable, inv.currency)}
-                    </p>
-                    {balanceOwed(inv) > 0 && balanceOwed(inv) < inv.payable && (
-                      <p className="text-xs text-muted-foreground">
-                        {money(balanceOwed(inv), inv.currency)} owing
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      downloadMut.mutate({ id: inv._id, ref: inv.ref });
-                    }}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="invoices">
+          <TabsList>
+            <TabsTrigger value="invoices">
+              Invoices ({openInvoices.length})
+            </TabsTrigger>
+            <TabsTrigger value="receipts">
+              Receipts ({paidInvoices.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="invoices" className="mt-4">
+            <Card className="animate-fade-in">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-heading">
+                  Invoices
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {isLoading && (
+                  <p className="p-6 text-center text-sm text-muted-foreground">
+                    Loading...
+                  </p>
+                )}
+                {!isLoading && !openInvoices.length && (
+                  <p className="p-6 text-center text-sm text-muted-foreground">
+                    No outstanding invoices — everything issued to you is paid.
+                  </p>
+                )}
+                <div className="divide-y">
+                  {openInvoices.map((inv) => renderInvoiceRow(inv))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="receipts" className="mt-4">
+            <Card className="animate-fade-in">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-heading">
+                  Receipts
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Invoices you've fully paid — kept here as your receipt.
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                {isLoading && (
+                  <p className="p-6 text-center text-sm text-muted-foreground">
+                    Loading...
+                  </p>
+                )}
+                {!isLoading && !paidInvoices.length && (
+                  <p className="p-6 text-center text-sm text-muted-foreground">
+                    No paid invoices yet — they'll show up here as receipts once
+                    settled.
+                  </p>
+                )}
+                <div className="divide-y">
+                  {paidInvoices.map((inv) => renderInvoiceRow(inv))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Invoice detail */}

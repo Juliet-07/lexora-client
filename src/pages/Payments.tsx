@@ -46,6 +46,12 @@ const money = (n: number, c = "USD") =>
     maximumFractionDigits: 2,
   });
 
+// A paid invoice is a receipt from here on — same underlying
+// document and reference, just shown with the prefix that matches
+// what it actually is to the client now.
+const displayRef = (inv: { ref: string; stage: ClientInvoiceStage }) =>
+  inv.stage === "Paid" ? inv.ref.replace(/^INV-/, "REC-") : inv.ref;
+
 const invoiceStatusStyles: Record<ClientInvoiceStage, string> = {
   Sent: "bg-warning/10 text-warning border-warning/20",
   "Part Paid": "bg-info/10 text-info border-info/20",
@@ -145,7 +151,9 @@ export default function Payments() {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-foreground">{inv.ref}</p>
+          <p className="text-sm font-medium text-foreground">
+            {displayRef(inv)}
+          </p>
           <Badge variant="outline" className={invoiceStatusStyles[inv.stage]}>
             {inv.stage}
           </Badge>
@@ -194,7 +202,7 @@ export default function Payments() {
         className="h-8 w-8 text-muted-foreground shrink-0"
         onClick={(e) => {
           e.stopPropagation();
-          downloadMut.mutate({ id: inv._id, ref: inv.ref });
+          downloadMut.mutate({ id: inv._id, ref: displayRef(inv) });
         }}
       >
         <Download className="h-4 w-4" />
@@ -317,7 +325,9 @@ export default function Payments() {
       <Dialog open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-heading">{detail?.ref}</DialogTitle>
+            <DialogTitle className="font-heading">
+              {detail ? displayRef(detail) : ""}
+            </DialogTitle>
           </DialogHeader>
           {detail && (
             <div className="space-y-4">

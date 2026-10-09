@@ -69,27 +69,12 @@ const clientClientItems = [
   { title: "Notifications", url: "/notifications", icon: Bell },
 ];
 
-const portalMeta: Record<
-  PortalType,
-  { label: string; initials: string; groupLabel: string }
-> = {
-  employee: {
-    label: "Employee Portal",
-    initials: "EP",
-    groupLabel: "My Workspace",
-  },
-  board: { label: "Board Portal", initials: "BP", groupLabel: "Board View" },
-  client_client: {
-    label: "Client Portal",
-    initials: "CP",
-    groupLabel: "My Portal",
-  },
-  kyc_client: {
-    label: "Client Portal",
-    initials: "CP",
-    groupLabel: "Main Menu",
-  },
-  unknown: { label: "Client Portal", initials: "CP", groupLabel: "Main Menu" },
+const portalMeta: Record<PortalType, { groupLabel: string }> = {
+  employee: { groupLabel: "My Workspace" },
+  board: { groupLabel: "Board View" },
+  client_client: { groupLabel: "My Portal" },
+  kyc_client: { groupLabel: "Main Menu" },
+  unknown: { groupLabel: "Main Menu" },
 };
 
 function getNavItems(portalType: PortalType) {
@@ -123,21 +108,23 @@ export function PortalSidebar() {
     <Sidebar collapsible="icon" className="gradient-sidebar border-r-0">
       <SidebarContent>
         <SidebarGroup>
-          <div className="flex items-center gap-3 px-3 py-4 mb-2">
-            <div className="h-9 w-9 rounded-lg gradient-primary flex items-center justify-center shrink-0">
-              <span className="text-sm font-bold text-sidebar-primary-foreground">
-                {meta.initials}
-              </span>
-            </div>
-            {!collapsed && (
-              <div className="animate-fade-in">
-                <p className="text-sm font-heading font-bold text-sidebar-primary-foreground">
-                  {meta.label}
-                </p>
-                <p className="text-xs text-sidebar-foreground/60">
-                  Welcome back
-                </p>
-              </div>
+          <div className="flex items-center px-3 py-4 mb-2">
+            {collapsed ? (
+              <img
+                src="/lexora-mark-light.png"
+                alt="Lexora Africa"
+                width={272}
+                height={354}
+                className="h-8 w-auto shrink-0"
+              />
+            ) : (
+              <img
+                src="/lexora-logo-light.png"
+                alt="Lexora Africa — Governance, Risk, Compliance, Beyond"
+                width={1149}
+                height={408}
+                className="h-9 w-auto max-w-full shrink-0 animate-fade-in"
+              />
             )}
           </div>
         </SidebarGroup>

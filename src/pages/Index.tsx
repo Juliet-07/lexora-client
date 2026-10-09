@@ -27,6 +27,7 @@ import { fetchDashboard } from "@/lib/dashboard-api";
 import { fetchUnreadCount } from "@/lib/notifications-api";
 import { stageStyles } from "@/lib/projects-api";
 import { statusStyles as ticketStatusStyles } from "@/lib/service-desk-api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const severityStyles: Record<string, string> = {
   critical: "bg-destructive/10 text-destructive border-destructive/20",
@@ -77,6 +78,7 @@ export default function Index() {
     queryKey: ["notifications-unread-count"],
     queryFn: fetchUnreadCount,
   });
+  const { data: user } = useCurrentUser();
 
   if (isLoading || !dashboard) {
     return (
@@ -101,6 +103,9 @@ export default function Index() {
   } = dashboard;
   const urgent = pendingActions.filter((a) => a.urgent).length;
   const outstandingEntries = Object.entries(stats.outstandingByCurrency);
+  const hour = new Date().getHours();
+  const timeOfDay =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   return (
     <PortalLayout
@@ -108,6 +113,17 @@ export default function Index() {
       subtitle="Everything happening across your engagements"
     >
       <div className="space-y-6">
+        {/* Personal greeting */}
+        <div className="animate-fade-in">
+          <h2 className="font-heading text-2xl font-bold text-foreground sm:text-[1.75rem]">
+            Welcome{user?.firstName ? `, ${user.firstName}` : ""}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {timeOfDay} — here's everything happening across your engagements
+            today.
+          </p>
+        </div>
+
         {/* Onboarding / account status banner — hidden once fully approved,
             since it stops being actionable at that point */}
         {onboarding.status !== "approved" && (

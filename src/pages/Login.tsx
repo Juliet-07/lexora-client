@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowUpRight, ShieldCheck, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import advisoryImage from "@/assets/lexora-client-advisory.jpg";
 import { useForm } from "react-hook-form";
 import axios from "axios";
@@ -87,7 +87,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen grid bg-card lg:grid-cols-[1.05fr_1fr]">
+    <div className="min-h-screen grid bg-background lg:grid-cols-[1.05fr_1fr]">
       <section className="relative isolate flex min-h-[380px] flex-col justify-end overflow-hidden bg-sidebar lg:min-h-screen" aria-label="Lexora Africa">
         <img src={advisoryImage} alt="African business professionals collaborating on documents in a bright office" width={1024} height={1536} className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_35%]" fetchPriority="high" />
         <div className="login-image-scrim absolute inset-0 -z-10" />
@@ -102,12 +102,12 @@ export default function Login() {
       </section>
 
       <main className="flex min-w-0 flex-col px-7 py-8 sm:px-12 lg:px-14 lg:py-10">
-        <header className="flex items-center justify-between gap-4">
+        <header className="flex items-center">
           <img src="/lexora-logo.png" alt="Lexora Africa — Governance, Risk, Compliance, Beyond" width={1142} height={400} className="h-auto w-40 sm:w-44" />
-          <Button variant="link" asChild className="h-auto shrink-0 p-0 text-xs text-muted-foreground"><a href="https://lexoraafrica.com/" target="_blank" rel="noopener noreferrer">Visit website <ArrowUpRight className="h-3.5 w-3.5" /></a></Button>
         </header>
 
-        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-14 lg:py-16">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-14 lg:py-16">
+          <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-xl shadow-primary/10 sm:p-8">
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-secondary">Client portal</p>
           <h1 className="text-3xl font-heading font-bold text-foreground sm:text-4xl">Welcome back.</h1>
           <p className="mt-3 mb-8 text-sm leading-relaxed text-muted-foreground">Sign in to stay connected with your Lexora team and keep your engagements moving forward.</p>
@@ -188,6 +188,7 @@ export default function Login() {
               </Button>
             </form>
           <p className="mt-7 text-center text-xs leading-relaxed text-muted-foreground">Need access to your account?<br /><span className="font-medium text-foreground">Contact your administrator</span></p>
+          </div>
         </div>
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-[11px] text-muted-foreground">
           <span>Lexora Africa · Client portal</span>

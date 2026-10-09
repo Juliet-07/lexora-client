@@ -7,6 +7,10 @@ export type ClientClassification =
 export const KYC_DRAFT_KEY = "kyc_draft_v1";
 const PROFILE_KEY = "client_profile_v1";
 
+export function getPostLoginRoute(kycStatus: string): string {
+  return kycStatus === "not_started" ? "/onboarding" : "/dashboard";
+}
+
 export interface ClientProfile {
   classifications: ClientClassification | null;
   isOnboarded: boolean;

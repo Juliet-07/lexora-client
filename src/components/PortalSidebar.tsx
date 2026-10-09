@@ -1,6 +1,5 @@
 import {
   LayoutDashboard,
-  FileText,
   CreditCard,
   Bell,
   FileSignature,
@@ -8,15 +7,8 @@ import {
   CheckSquare,
   AlertTriangle,
   LogOut,
-  CalendarDays,
-  Wallet,
-  Banknote,
-  Clock,
   Target,
-  GraduationCap,
   Inbox,
-  Users,
-  BarChart3,
   LifeBuoy,
   Scale,
 } from "lucide-react";
@@ -27,21 +19,15 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  useCurrentUser,
-  isEmployee,
-  PortalType,
-  getPortalType,
-} from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
-const kycClientItems = [
+const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Onboarding", url: "/onboarding", icon: CheckSquare },
   { title: "Projects", url: "/projects", icon: Target },
@@ -55,49 +41,11 @@ const kycClientItems = [
   { title: "My Profile", url: "/profile", icon: User },
 ];
 
-const boardItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "HR Overview", url: "/board/hr", icon: Users },
-  { title: "Payroll", url: "/board/payroll", icon: BarChart3 },
-  { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Notifications", url: "/notifications", icon: Bell },
-];
-
-const clientClientItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Notifications", url: "/notifications", icon: Bell },
-];
-
-const portalMeta: Record<PortalType, { groupLabel: string }> = {
-  employee: { groupLabel: "My Workspace" },
-  board: { groupLabel: "Board View" },
-  client_client: { groupLabel: "My Portal" },
-  kyc_client: { groupLabel: "Main Menu" },
-  unknown: { groupLabel: "Main Menu" },
-};
-
-function getNavItems(portalType: PortalType) {
-  switch (portalType) {
-    case "board":
-      return boardItems;
-    case "client_client":
-      return clientClientItems;
-    case "kyc_client":
-    default:
-      return kycClientItems;
-  }
-}
-
 export function PortalSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
   const { data: user } = useCurrentUser();
-
-  const portalType = getPortalType(user);
-  const meta = portalMeta[portalType];
-  const navItems = getNavItems(portalType);
 
   const handleLogout = () => {
     localStorage.removeItem("userToken");
@@ -130,9 +78,6 @@ export function PortalSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          {/* <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">
-            {meta.groupLabel}
-          </SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (

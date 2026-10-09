@@ -130,9 +130,9 @@ export function PortalSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">
+          {/* <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] uppercase tracking-wider">
             {meta.groupLabel}
-          </SidebarGroupLabel>
+          </SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (

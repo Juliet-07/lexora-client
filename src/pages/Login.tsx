@@ -9,27 +9,12 @@ import {
   Lock,
   Mail,
   ArrowRight,
-  ShieldCheck,
   Loader2,
 } from "lucide-react";
 import advisoryImage from "@/assets/lexora-client-advisory.jpg";
 import { useForm } from "react-hook-form";
 import axios from "axios";
-import { setProfile, type ClientClassification } from "@/lib/profile";
-
-function getPostLoginRoute(user: any, kycStatus: string): string {
-  const roles: string[] = user?.roles ?? [];
-
-  if (
-    roles.includes("client_employee") ||
-    roles.includes("client_board") ||
-    roles.includes("client_client")
-  ) {
-    return "/dashboard";
-  }
-
-  return kycStatus === "not_started" ? "/onboarding" : "/dashboard";
-}
+import { getPostLoginRoute, setProfile, type ClientClassification } from "@/lib/profile";
 
 export default function Login() {
   const apiURL = import.meta.env.VITE_REACT_APP_BASE_URL;
@@ -59,21 +44,7 @@ export default function Login() {
 
       localStorage.setItem("userToken", token);
 
-      const roles: string[] = user?.roles ?? [];
-
-      const isOthers =
-        roles.includes("client_employee") ||
-        roles.includes("client_board") ||
-        roles.includes("client_client");
-
-      if (isOthers) {
-        setIsLoading(false);
-        navigate("/dashboard");
-        return;
-      }
-
-      // ── Client user — existing KYC routing flow ───────────
-      const kycStatus: string = payload.kycContext?.kycStatus ?? "not_started";
+      const kycStatus: string = payload.kycContext?.kycStatus ?? user?.clientProfile?.kycStatus ?? "not_started";
       const classification: ClientClassification | null =
         user?.clientProfile?.classifications ?? null;
 
@@ -83,10 +54,8 @@ export default function Login() {
         isOnboarded: kycStatus === "approved" || kycStatus === "completed",
       });
 
-      setTimeout(() => {
-        setIsLoading(false);
-        navigate(kycStatus === "not_started" ? "/onboarding" : "/dashboard");
-      }, 600);
+      setIsLoading(false);
+      navigate(getPostLoginRoute(kycStatus));
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage("Login failed. Please check your credentials.");
@@ -95,9 +64,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen grid bg-background lg:grid-cols-[1.05fr_1fr]">
+    <div className="login-screen relative isolate grid bg-background">
       <section
-        className="fixed md:relative isolate flex min-h-[300px] flex-col justify-end overflow-hidden bg-sidebar lg:min-h-screen"
+        className="login-image-panel relative isolate flex min-h-0 flex-col justify-end overflow-hidden bg-background md:absolute md:inset-0 md:-z-10"
         aria-label="Lexora Africa"
       >
         <img
@@ -105,22 +74,22 @@ export default function Login() {
           alt="African business professionals collaborating on documents in a bright office"
           width={1024}
           height={1536}
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_35%]"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_35%] md:opacity-60 md:object-center"
           fetchPriority="high"
         />
-        <div className="login-image-scrim absolute inset-0 -z-10" />
-        <div className="px-7 pb-8 pt-32 sm:px-12 lg:px-14 lg:pb-14">
-          <p className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary-foreground/85">
+        <div className="login-image-scrim absolute inset-0 -z-10 md:hidden" />
+        <div className="login-image-copy px-7 pb-5 pt-5 sm:px-12 md:hidden">
+          <p className="login-eyebrow mb-3 flex items-center gap-3 text-xs font-semibold uppercase text-primary-foreground/85">
             <span className="h-px w-8 bg-primary-foreground/65" /> Your partner
             in progress
           </p>
-          <h2 className="max-w-lg text-3xl font-bold leading-tight text-primary-foreground sm:text-4xl lg:text-5xl">
+          <h2 className="text-3xl font-bold leading-tight text-primary-foreground">
             Lexora Africa
           </h2>
-          <p className="mt-4 max-w-sm text-base leading-relaxed text-primary-foreground/85">
+          <p className="mt-2 text-sm leading-relaxed text-primary-foreground/85">
             Governance. Risk. Compliance. Beyond.
           </p>
-          <div className="mt-8 border-t border-primary-foreground/25 pt-6">
+          <div className="login-image-description mt-4 border-t border-primary-foreground/25 pt-3">
             <p className="max-w-md text-sm leading-relaxed text-primary-foreground/80">
               Your engagements, documents and conversations. Connected in one
               place.
@@ -129,30 +98,29 @@ export default function Login() {
         </div>
       </section>
 
-      <main className="flex min-w-0 flex-col px-7 py-8 sm:px-12 lg:px-14 lg:py-10 relative top-[350px] md:top-0">
-        <header className="flex items-center">
+      <main className="login-main relative flex min-w-0 flex-col items-center justify-center px-5 py-3 md:p-8">
+        <div className="login-form-panel w-full max-w-md rounded-2xl border border-border/70 bg-card p-5 shadow-xl shadow-primary/10 md:p-8">
+        <header className="mb-3 flex items-center justify-center md:mb-5">
           <img
             src="/lexora-logo.png"
             alt="Lexora Africa — Governance, Risk, Compliance, Beyond"
             width={1142}
             height={400}
-            className="h-auto w-40 sm:w-44"
+            className="h-auto w-28 md:w-40"
           />
         </header>
 
-        <div className="mx-auto flex w-full max-w-md flex-col justify-center py-4 lg:py-16">
-          <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-xl shadow-primary/10 sm:p-8">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-secondary text-center">
+            <p className="mb-2 text-xs font-semibold uppercase text-secondary text-center">
               Client portal
             </p>
-            <h1 className="text-3xl font-heading font-bold text-foreground sm:text-4xl text-center">
+            <h1 className="text-2xl font-heading font-bold text-foreground md:text-4xl text-center">
               Welcome back.
             </h1>
-            <p className="m-3 text-xs md:text-sm leading-relaxed text-muted-foreground text-center">
+            <p className="login-form-description my-3 text-xs md:text-sm leading-relaxed text-muted-foreground text-center">
               Sign in to stay connected with your team and keep your engagements
               moving forward.
             </p>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
               {errorMessage && (
                 <div
                   role="alert"
@@ -174,7 +142,7 @@ export default function Login() {
                     name="email"
                     autoComplete="username"
                     onChange={handleChange}
-                    className="h-12 rounded-md bg-background/50 pl-10"
+                     className="h-11 rounded-md bg-background/50 pl-10 md:h-12"
                     required
                   />
                 </div>
@@ -202,7 +170,7 @@ export default function Login() {
                     name="password"
                     autoComplete="current-password"
                     onChange={handleChange}
-                    className="h-12 rounded-md bg-background/50 pl-10 pr-12"
+                    className="h-11 rounded-md bg-background/50 pl-10 pr-12 md:h-12"
                     required
                   />
                   <Button
@@ -227,7 +195,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="h-12 w-full rounded-md text-sm font-semibold"
+                className="h-11 w-full rounded-md text-sm font-semibold md:h-12"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -241,7 +209,6 @@ export default function Login() {
                 )}
               </Button>
             </form>
-          </div>
         </div>
       </main>
     </div>

@@ -1,16 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "@/pages/Login";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
-import DashboardRouter from "@/DashboardRouter";
-// import Documents from "@/pages/Documents";
+import Index from "@/pages/Index";
 import Contracts from "@/pages/Contracts";
 import Payments from "@/pages/Payments";
-import Messages from "@/pages/Messages";
 import KycOnboarding from "@/pages/KYC/KycOnboarding";
 import Notifications from "@/pages/Notifications";
 import Alerts from "@/pages/Alerts";
@@ -20,8 +18,6 @@ import ProjectDetail from "@/pages/Projects/ProjectDetail";
 import Newsletters from "@/pages/Newsletters";
 import ServiceDesk from "@/pages/ServiceDesk";
 import NotFound from "@/pages/NotFound";
-import { boardRoutes } from "@/routes/board.routes";
-import { clientClientRoutes } from "@/routes/client.routes";
 import SignContractPage from "./pages/SignContractPage";
 import KycUpdate from "./pages/KYC/KycUpdate";
 import Cases from "./pages/Cases/Cases";
@@ -37,20 +33,18 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* ── Public ──────────────────────────────────────── */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/sign-contract/:token" element={<SignContractPage />} />
 
-          {/* ── Shared (all portal types) ───────────────────── */}
-          <Route path="/dashboard" element={<DashboardRouter />} />
-          {/* <Route path="/documents" element={<Documents />} /> */}
+          <Route path="/dashboard" element={<Index />} />
           <Route path="/contracts" element={<Contracts />} />
           <Route path="/notifications" element={<Notifications />} />
 
           {/* ── KYC client portal ───────────────────────────── */}
           <Route path="/payments" element={<Payments />} />
-          <Route path="/messages" element={<Messages />} />
           <Route path="/onboarding" element={<KycOnboarding />} />
           <Route path="/kyc-update" element={<KycUpdate />} />
           <Route path="/alerts" element={<Alerts />} />
@@ -61,12 +55,6 @@ const App = () => (
           <Route path="/cases/:type/:id" element={<CaseDetail />} />
           <Route path="/newsletters" element={<Newsletters />} />
           <Route path="/service-desk" element={<ServiceDesk />} />
-
-          {/* ── Board portal (client_board) ─────────────────── */}
-          {boardRoutes}
-
-          {/* ── Client-client portal (client_client) ────────── */}
-          {clientClientRoutes}
 
           {/* ── Fallback ────────────────────────────────────── */}
           <Route path="*" element={<NotFound />} />

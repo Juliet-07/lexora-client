@@ -12,6 +12,7 @@ import {
   Loader2,
 } from "lucide-react";
 import advisoryImage from "@/assets/lexora-client-advisory.jpg";
+import advisoryWideImage from "@/assets/lexora-client-advisory-wide.jpg";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { getPostLoginRoute, setProfile, type ClientClassification } from "@/lib/profile";
@@ -69,14 +70,17 @@ export default function Login() {
         className="login-image-panel relative isolate flex min-h-0 flex-col justify-end overflow-hidden bg-background md:absolute md:inset-0 md:-z-10"
         aria-label="Lexora Africa"
       >
+        <picture>
+        <source media="(min-width: 768px)" srcSet={advisoryWideImage} />
         <img
           src={advisoryImage}
           alt="African business professionals collaborating on documents in a bright office"
           width={1024}
           height={1536}
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_35%] md:opacity-60 md:object-center"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_35%] md:opacity-60 md:object-left lg:object-center"
           fetchPriority="high"
         />
+        </picture>
         <div className="login-image-scrim absolute inset-0 -z-10 md:hidden" />
         <div className="login-image-copy px-7 pb-5 pt-5 sm:px-12 md:hidden">
           <p className="login-eyebrow mb-3 flex items-center gap-3 text-xs font-semibold uppercase text-primary-foreground/85">
@@ -99,7 +103,7 @@ export default function Login() {
       </section>
 
       <main className="login-main relative flex min-w-0 flex-col items-center justify-center px-5 py-3 md:p-8">
-        <div className="login-form-panel w-full max-w-md rounded-2xl border border-border/70 bg-card p-5 shadow-xl shadow-primary/10 md:p-8">
+        <div className="login-form-panel w-full max-w-md rounded-2xl border border-border/70 bg-card p-5 shadow-xl shadow-primary/10 md:max-w-sm md:p-8 lg:max-w-md">
         <header className="mb-3 flex items-center justify-center md:mb-5">
           <img
             src="/lexora-logo.png"

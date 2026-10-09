@@ -1,0 +1,2 @@
+## Architecture rules
+- Keep login presentation in the login page and use global semantic tokens for its image overlay; preserve existing authentication and post-login routing when updating the design.

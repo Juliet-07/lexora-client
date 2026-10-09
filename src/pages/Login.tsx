@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowUpRight, ShieldCheck, Loader2 } from "lucide-react";
+import advisoryImage from "@/assets/lexora-client-advisory.jpg";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import { setProfile, type ClientClassification } from "@/lib/profile";
@@ -87,31 +87,33 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="text-center space-y-3">
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-white flex items-center justify-center shadow-lg p-2">
-            <img
-              src="/lexora-logo.png"
-              alt="Lexora logo"
-              className="h-full w-full object-contain"
-            />
+    <div className="min-h-screen grid bg-card lg:grid-cols-[1.05fr_1fr]">
+      <section className="relative isolate flex min-h-[380px] flex-col justify-end overflow-hidden bg-sidebar lg:min-h-screen" aria-label="Lexora Africa">
+        <img src={advisoryImage} alt="African business professionals collaborating on documents in a bright office" width={1024} height={1536} className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_35%]" fetchPriority="high" />
+        <div className="login-image-scrim absolute inset-0 -z-10" />
+        <div className="px-7 pb-8 pt-32 sm:px-12 lg:px-14 lg:pb-14">
+          <p className="mb-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary-foreground/85"><span className="h-px w-8 bg-primary-foreground/65" /> Your partner in progress</p>
+          <h2 className="max-w-lg text-3xl font-bold leading-tight text-primary-foreground sm:text-4xl lg:text-5xl">Lexora Africa</h2>
+          <p className="mt-4 max-w-sm text-base leading-relaxed text-primary-foreground/85">Governance. Risk. Compliance. Beyond.</p>
+          <div className="mt-8 border-t border-primary-foreground/25 pt-6">
+            <p className="max-w-md text-sm leading-relaxed text-primary-foreground/80">Your engagements, documents and conversations. Connected in one place.</p>
           </div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">
-            Welcome Back
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Sign in to your client portal
-          </p>
         </div>
+      </section>
 
-        {/* Login Card */}
-        <Card className="border-0 shadow-xl">
-          <CardContent className="pt-6 pb-8 px-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <main className="flex min-w-0 flex-col px-7 py-8 sm:px-12 lg:px-14 lg:py-10">
+        <header className="flex items-center justify-between gap-4">
+          <img src="/lexora-logo.png" alt="Lexora Africa — Governance, Risk, Compliance, Beyond" width={1142} height={400} className="h-auto w-40 sm:w-44" />
+          <Button variant="link" asChild className="h-auto shrink-0 p-0 text-xs text-muted-foreground"><a href="https://lexoraafrica.com/" target="_blank" rel="noopener noreferrer">Visit website <ArrowUpRight className="h-3.5 w-3.5" /></a></Button>
+        </header>
+
+        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-14 lg:py-16">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-secondary">Client portal</p>
+          <h1 className="text-3xl font-heading font-bold text-foreground sm:text-4xl">Welcome back.</h1>
+          <p className="mt-3 mb-8 text-sm leading-relaxed text-muted-foreground">Sign in to stay connected with your Lexora team and keep your engagements moving forward.</p>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {errorMessage && (
-                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3">
+                <div role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3">
                   {errorMessage}
                 </div>
               )}
@@ -126,8 +128,9 @@ export default function Login() {
                     placeholder="you@company.com"
                     value={email}
                     name="email"
+                     autoComplete="username"
                     onChange={handleChange}
-                    className="pl-10"
+                    className="h-12 rounded-md bg-background/50 pl-10"
                     required
                   />
                 </div>
@@ -136,13 +139,14 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <button
+                  <Button
+                    variant="link"
                     type="button"
                     onClick={() => navigate("/forgot-password")}
-                    className="text-xs text-primary hover:underline"
+                    className="h-auto p-0 text-xs text-primary"
                   >
                     Forgot password?
-                  </button>
+                  </Button>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -152,42 +156,44 @@ export default function Login() {
                     placeholder="••••••••"
                     value={password}
                     name="password"
+                    autoComplete="current-password"
                     onChange={handleChange}
-                    className="pl-10 pr-10"
+                    className="h-12 rounded-md bg-background/50 pl-10 pr-12"
                     required
                   />
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
                     ) : (
                       <Eye className="h-4 w-4" />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full gradient-primary"
+                className="h-12 w-full rounded-md text-sm font-semibold"
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? <><Loader2 className="animate-spin" /> Signing in...</> : <>Sign in <ArrowRight /></>}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-
-        <p className="text-center text-xs text-muted-foreground">
-          Don't have an account?{" "}
-          <span className="text-primary font-medium">
-            Contact your administrator
-          </span>
-        </p>
-      </div>
+          <p className="mt-7 text-center text-xs leading-relaxed text-muted-foreground">Need access to your account?<br /><span className="font-medium text-foreground">Contact your administrator</span></p>
+        </div>
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5 text-[11px] text-muted-foreground">
+          <span>Lexora Africa · Client portal</span>
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-secondary" /> Private & confidential</span>
+        </footer>
+      </main>
     </div>
   );
 }

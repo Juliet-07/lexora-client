@@ -70,7 +70,7 @@ const money = (n: number, currency: string) =>
   `${currency} ${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
 export default function Index() {
-  const { data: dashboard, isLoading } = useQuery({
+  const { data: dashboard, isLoading, isError, refetch } = useQuery({
     queryKey: ["client-dashboard"],
     queryFn: fetchDashboard,
   });
@@ -80,11 +80,23 @@ export default function Index() {
   });
   const { data: user } = useCurrentUser();
 
-  if (isLoading || !dashboard) {
+  if (isLoading) {
     return (
       <PortalLayout title="Dashboard" subtitle="Loading…">
         <div className="flex h-64 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </PortalLayout>
+    );
+  }
+
+  if (isError || !dashboard) {
+    return (
+      <PortalLayout title="Dashboard">
+        <div role="alert" className="flex h-64 flex-col items-center justify-center gap-4 text-center">
+          <AlertCircle className="h-6 w-6 text-destructive" />
+          <p className="text-sm text-muted-foreground">Your dashboard could not be loaded.</p>
+          <Button variant="outline" onClick={() => refetch()}>Try again</Button>
         </div>
       </PortalLayout>
     );

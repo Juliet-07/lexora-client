@@ -148,11 +148,6 @@ export default function Profile() {
                 <Mail className="h-3.5 w-3.5" /> {user?.email ?? "—"}
               </p>
               <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start pt-1">
-                {user?.roles?.map((r) => (
-                  <Badge key={r} variant="secondary" className="text-[10px]">
-                    {r.replace(/_/g, " ")}
-                  </Badge>
-                ))}
                 {user?.status && (
                   <Badge variant="outline" className="text-[10px] capitalize">
                     {user.status}

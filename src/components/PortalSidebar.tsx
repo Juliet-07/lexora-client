@@ -11,6 +11,7 @@ import {
   Inbox,
   LifeBuoy,
   Scale,
+  CalendarDays,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -36,6 +37,7 @@ const navItems = [
   { title: "Alerts", url: "/alerts", icon: AlertTriangle },
   { title: "Payments", url: "/payments", icon: CreditCard },
   { title: "Newsletters", url: "/newsletters", icon: Inbox },
+  { title: "Events", url: "/events", icon: CalendarDays },
   { title: "Service Desk", url: "/service-desk", icon: LifeBuoy },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "My Profile", url: "/profile", icon: User },

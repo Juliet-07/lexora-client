@@ -16,6 +16,7 @@ import Profile from "@/pages/Profile";
 import Projects from "@/pages/Projects/Projects";
 import ProjectDetail from "@/pages/Projects/ProjectDetail";
 import Newsletters from "@/pages/Newsletters";
+import Events from "@/pages/Events";
 import ServiceDesk from "@/pages/ServiceDesk";
 import NotFound from "@/pages/NotFound";
 import SignContractPage from "./pages/SignContractPage";
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/cases" element={<Cases />} />
           <Route path="/cases/:type/:id" element={<CaseDetail />} />
           <Route path="/newsletters" element={<Newsletters />} />
+          <Route path="/events" element={<Events />} />
           <Route path="/service-desk" element={<ServiceDesk />} />
 
           {/* ── Fallback ────────────────────────────────────── */}

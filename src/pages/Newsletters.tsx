@@ -111,7 +111,7 @@ export default function Newsletters() {
                     {n.subject || n.name}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    {previewFrom(n.body)}
+                    {n.previewText?.trim() || previewFrom(n.body)}
                   </p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <CalendarDays className="h-3 w-3" />{" "}

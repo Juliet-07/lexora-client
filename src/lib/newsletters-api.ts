@@ -18,6 +18,10 @@ export interface Newsletter {
   type: "Newsletter" | "Event invite";
   subject: string;
   body: string;
+  // Set for template newsletters — the short inbox line the sender
+  // wrote, preferred over stripping the branded HTML for the list.
+  previewText?: string;
+  template?: string | null;
   event: NewsletterEventDetails | null;
   sentAt: string;
   // Real, set by the backend the moment this client actually opens

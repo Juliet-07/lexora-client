@@ -35,7 +35,12 @@ export interface MyEvent {
   meetingLink: string;
   host: string;
   agenda: string;
+  agendaItems?: { time: string; label: string }[];
+  timezone?: string;
+  inviteMessage?: string;
+  inviteImageUrl?: string;
   myStatus: EventInviteStatus | null;
+  myRespondedAt?: string | null;
 }
 
 export const fetchMyEvents = (): Promise<MyEvent[]> =>

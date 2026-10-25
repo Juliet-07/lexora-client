@@ -1,22 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PortalLayout } from "@/components/PortalLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { PartyPopper } from "lucide-react";
+import { useState } from "react";
 import {
-  CalendarDays,
-  Clock,
-  MapPin,
-  Video,
-  CheckCircle2,
-  PartyPopper,
-} from "lucide-react";
+  PortalEventCard,
+  PortalEventDialog,
+} from "@/components/PortalEventCard";
 import { useToast } from "@/hooks/use-toast";
-import {
-  fetchMyEvents,
-  acknowledgeMyEvent,
-  type MyEvent,
-} from "@/lib/events-api";
+import { fetchMyEvents, acknowledgeMyEvent } from "@/lib/events-api";
 
 // In-house events this client is invited to. There is no separate
 // "check in" step — acknowledging here, from the client's own
@@ -25,6 +17,7 @@ import {
 export default function Events() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["my-events"],
@@ -48,74 +41,10 @@ export default function Events() {
   const upcoming = events.filter((e) => e.status === "Published");
   const past = events.filter((e) => e.status === "Completed");
 
-  const EventCard = ({ e }: { e: MyEvent }) => {
-    const acknowledged = e.myStatus === "Acknowledged";
-    return (
-      <Card key={e._id} className="animate-fade-in">
-        <CardContent className="p-5 space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <Badge variant="outline">{e.type}</Badge>
-              <h3 className="font-heading font-bold text-foreground mt-1">
-                {e.title}
-              </h3>
-            </div>
-            {acknowledged ? (
-              <Badge
-                className="bg-success/15 text-success shrink-0"
-                variant="secondary"
-              >
-                <CheckCircle2 className="h-3 w-3 mr-1" /> Attending
-              </Badge>
-            ) : e.status === "Published" ? (
-              <Button
-                size="sm"
-                className="shrink-0"
-                onClick={() => ackMut.mutate(e._id)}
-                disabled={ackMut.isPending}
-              >
-                Acknowledge attendance
-              </Button>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarDays className="h-3.5 w-3.5" /> {e.date.slice(0, 10)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" /> {e.startTime}–{e.endTime}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              {e.virtual ? (
-                <Video className="h-3.5 w-3.5" />
-              ) : (
-                <MapPin className="h-3.5 w-3.5" />
-              )}
-              {e.virtual ? "Virtual" : e.location || "—"}
-            </span>
-          </div>
-          {e.description && (
-            <p className="text-sm text-muted-foreground">{e.description}</p>
-          )}
-          {e.virtual && e.meetingLink && acknowledged && (
-            <a
-              href={e.meetingLink}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm underline break-all"
-            >
-              {e.meetingLink}
-            </a>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
-
   return (
     <PortalLayout
       title="Events"
-      subtitle="Events your firm has invited you to — acknowledge your attendance here"
+      subtitle="Events your firm has invited you to — click an event for the full details and acknowledge your attendance"
     >
       <div className="space-y-6">
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
@@ -134,9 +63,15 @@ export default function Events() {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Upcoming
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {upcoming.map((e) => (
-                <EventCard key={e._id} e={e} />
+                <PortalEventCard
+                  key={e._id}
+                  e={e}
+                  onOpen={() => setOpenId(e._id)}
+                  onAcknowledge={() => ackMut.mutate(e._id)}
+                  acknowledging={ackMut.isPending}
+                />
               ))}
             </div>
           </div>
@@ -146,14 +81,27 @@ export default function Events() {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Past
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {past.map((e) => (
-                <EventCard key={e._id} e={e} />
+                <PortalEventCard
+                  key={e._id}
+                  e={e}
+                  onOpen={() => setOpenId(e._id)}
+                  onAcknowledge={() => ackMut.mutate(e._id)}
+                  acknowledging={ackMut.isPending}
+                />
               ))}
             </div>
           </div>
         )}
       </div>
+
+      <PortalEventDialog
+        e={events.find((x) => x._id === openId) ?? null}
+        onClose={() => setOpenId(null)}
+        onAcknowledge={(id) => ackMut.mutate(id)}
+        acknowledging={ackMut.isPending}
+      />
     </PortalLayout>
   );
 }

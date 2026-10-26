@@ -39,6 +39,13 @@ export interface MyEvent {
   timezone?: string;
   inviteMessage?: string;
   inviteImageUrl?: string;
+  documents?: {
+    id: string;
+    name: string;
+    description?: string;
+    url: string;
+    size?: number;
+  }[];
   myStatus: EventInviteStatus | null;
   myRespondedAt?: string | null;
 }

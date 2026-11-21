@@ -27,6 +27,7 @@ export interface RelatedEntity {
   ownershipPercentage: string;
   natureOfRelationship: string;
   natureOfRelationshipOther: string;
+  purposeOfRelationship: string;
 }
 
 export interface KycData {
@@ -124,6 +125,7 @@ export interface KycData {
   directors: string;
 
   // AML
+  /** Legacy: the purpose is now captured per related entity (purposeOfRelationship). */
   purpose: string;
   sourceOfFunds: string[];
   sourceOfFundsOther: string;
@@ -174,6 +176,7 @@ export const emptyRelatedEntity: RelatedEntity = {
   ownershipPercentage: "",
   natureOfRelationship: "",
   natureOfRelationshipOther: "",
+  purposeOfRelationship: "",
 };
 
 export const initialData: KycData = {

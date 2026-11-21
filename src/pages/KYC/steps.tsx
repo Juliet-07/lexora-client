@@ -991,17 +991,6 @@ export function AmlStep({
   return (
     <div className="space-y-5">
       <div>
-        <Label>Purpose of Business Relationship *</Label>
-        <Textarea
-          rows={3}
-          className="mt-1.5"
-          placeholder="Describe the purpose and intended nature of the relationship"
-          value={data.purpose}
-          onChange={(e) => update("purpose", e.target.value)}
-        />
-      </div>
-
-      <div>
         <Label className="mb-2 block">Expected Transaction Patterns *</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {transactionPatterns.map((opt) => (
@@ -1765,6 +1754,20 @@ function CorporateOwnershipStep({
                       />
                     </div>
                   )}
+                  <div className="sm:col-span-2">
+                    <Label>Purpose of Business Relationship *</Label>
+                    <Textarea
+                      rows={3}
+                      className="mt-1.5"
+                      placeholder="Describe the purpose and intended nature of the relationship"
+                      value={r.purposeOfRelationship ?? ""}
+                      onChange={(e) =>
+                        updateRelated(i, {
+                          purposeOfRelationship: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
               </RepeaterCard>
             ))}
